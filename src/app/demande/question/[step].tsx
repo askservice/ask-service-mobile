@@ -1,12 +1,12 @@
-import MaterialIcons from '@expo/vector-icons/MaterialIcons'
 import { router, useLocalSearchParams } from 'expo-router'
 import { useRef, useState } from 'react'
-import { ActivityIndicator, Pressable, ScrollView, View } from 'react-native'
+import { ActivityIndicator, ScrollView, View } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 
+import { Calendar } from '@/components/Calendar'
 import { ServiceIconBadge } from '@/components/ServiceIcon'
 import { Button, ErrorText, Field, Footer, OptionButton, StepHeader, Text, Title } from '@/components/ui'
-import { dateLabel, dayLabel, isoDay, nextDays } from '@/lib/dates'
+import { longDate } from '@/lib/dates'
 import { isMultiple, isSingleChoice, missingAnswers } from '@/lib/questions'
 import type { Answer, Question } from '@/lib/types'
 import { useDraft } from '@/state/draft'
@@ -132,7 +132,10 @@ function QuestionBlock({ question: q, answer, showHint, error, onAnswer, onPick 
         </View>
       ) : null}
 
-      {q.type === 'date' ? <DateChoice value={typeof answer === 'string' ? answer : ''} onPick={onPick} /> : null}
+      {q.type === 'date' ? <Calendar value={typeof answer === 'string' ? answer : ''} onPick={onPick} /> : null}
+      {q.type === 'date' && typeof answer === 'string' && answer ? (
+        <Text style={{ color: colors.textSecondary }}>{`Date choisie : ${longDate(answer)}`}</Text>
+      ) : null}
 
       {['text', 'textarea', 'number'].includes(q.type) ? (
         <Field
@@ -150,37 +153,6 @@ function QuestionBlock({ question: q, answer, showHint, error, onAnswer, onPick 
       ) : null}
 
       {error ? <ErrorText>Répondez à cette question pour continuer.</ErrorText> : null}
-    </View>
-  )
-}
-
-/** Date of the job: "Dès que possible" (today) or one of the next 14 days. */
-function DateChoice({ value, onPick }: { value: string; onPick: (iso: string) => void }) {
-  const days = nextDays(15)
-  const today = isoDay(days[0])
-  return (
-    <View style={{ gap: 12 }}>
-      <OptionButton label="Dès que possible" selected={value === today} onPress={() => onPick(today)} trailing={<MaterialIcons name="bolt" size={20} color={colors.textMuted} />} />
-      <Text weight="semibold" style={{ fontSize: 13, color: colors.textMuted }}>Ou choisissez une date</Text>
-      <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
-        {days.slice(1).map((d) => {
-          const iso = isoDay(d)
-          const selected = value === iso
-          return (
-            <Pressable
-              key={iso}
-              accessibilityRole="button"
-              accessibilityState={{ selected }}
-              accessibilityLabel={`${dayLabel(d)} ${dateLabel(d)}`}
-              onPress={() => onPick(iso)}
-              style={{ width: '23%', flexGrow: 1, paddingVertical: 10, borderRadius: 12, borderWidth: selected ? 2 : 1, borderColor: selected ? colors.primary : colors.border, backgroundColor: selected ? colors.primaryDim : colors.card, alignItems: 'center' }}
-            >
-              <Text style={{ fontSize: 12, color: colors.textMuted }}>{dayLabel(d)}</Text>
-              <Text weight="bold" style={{ fontSize: 15 }}>{dateLabel(d)}</Text>
-            </Pressable>
-          )
-        })}
-      </View>
     </View>
   )
 }

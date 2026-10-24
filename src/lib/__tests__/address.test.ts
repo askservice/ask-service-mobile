@@ -1,5 +1,5 @@
 import { searchAddress, toSuggestion } from '../address'
-import { isoDay, nextDays } from '../dates'
+import { isoDay, longDate, monthGrid } from '../dates'
 
 describe('address suggestions (Base Adresse Nationale)', () => {
   it('maps a street address to the request location', () => {
@@ -34,8 +34,21 @@ describe('address suggestions (Base Adresse Nationale)', () => {
 })
 
 describe('dates', () => {
-  it('gives the next days from today, as YYYY-MM-DD', () => {
-    const days = nextDays(3, new Date(2026, 9, 30))
-    expect(days.map(isoDay)).toEqual(['2026-10-30', '2026-10-31', '2026-11-01'])
+  it('formats a day as YYYY-MM-DD', () => {
+    expect(isoDay(new Date(2026, 9, 5))).toBe('2026-10-05')
+  })
+
+  it('lays a month out in weeks starting on Monday', () => {
+    // October 2026 starts on a Thursday and has 31 days.
+    const weeks = monthGrid(2026, 9)
+    expect(weeks).toHaveLength(5)
+    expect(weeks[0].slice(0, 3)).toEqual([null, null, null])
+    expect(weeks[0][3]?.getDate()).toBe(1)
+    expect(weeks[4][5]?.getDate()).toBe(31)
+    expect(weeks[4][6]).toBeNull()
+  })
+
+  it('writes the chosen date in full', () => {
+    expect(longDate('2026-10-26')).toBe('lundi 26 octobre 2026')
   })
 })
