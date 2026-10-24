@@ -1,6 +1,7 @@
+import Feather from '@expo/vector-icons/Feather'
 import MaterialIcons from '@expo/vector-icons/MaterialIcons'
 import { router } from 'expo-router'
-import { useState } from 'react'
+import { useState, type ReactNode } from 'react'
 import { ActivityIndicator, Pressable, ScrollView, TextInput, View } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 
@@ -13,9 +14,10 @@ import { useDraft } from '@/state/draft'
 import { useFlowSteps } from '@/state/flow'
 import { colors, fonts, radius } from '@/theme'
 
-const CLIENT_TYPES: { value: ClientType; label: string }[] = [
-  { value: 'Individual', label: 'Particulier' },
-  { value: 'Company', label: 'Entreprise' },
+// Same cards as the website: house (FiHome) / office building (HiBuildingOffice2).
+const CLIENT_TYPES: { value: ClientType; label: string; desc: string; icon: ReactNode }[] = [
+  { value: 'Individual', label: 'Particulier', desc: 'Pour votre domicile', icon: <Feather name="home" size={36} color={colors.primary} /> },
+  { value: 'Company', label: 'Entreprise', desc: 'Usage professionnel', icon: <MaterialIcons name="apartment" size={40} color={colors.primary} /> },
 ]
 
 // Step 1: the service (grouped by category, with search) and Particulier / Entreprise.
@@ -106,7 +108,7 @@ export default function ServiceStep() {
 
         <View style={{ gap: 8 }}>
           <Text weight="bold">Vous êtes</Text>
-          <View style={{ flexDirection: 'row', gap: 8, padding: 4, borderRadius: radius.md, backgroundColor: colors.elevated }}>
+          <View style={{ flexDirection: 'row', gap: 10 }}>
             {CLIENT_TYPES.map((t) => {
               const selected = draft.clientType === t.value
               return (
@@ -115,9 +117,21 @@ export default function ServiceStep() {
                   accessibilityRole="button"
                   accessibilityState={{ selected }}
                   onPress={() => update({ clientType: t.value })}
-                  style={{ flex: 1, height: 42, borderRadius: radius.sm, alignItems: 'center', justifyContent: 'center', backgroundColor: selected ? colors.card : 'transparent' }}
+                  style={{
+                    flex: 1,
+                    alignItems: 'center',
+                    gap: 4,
+                    paddingVertical: 14,
+                    paddingHorizontal: 12,
+                    borderRadius: radius.lg,
+                    borderWidth: 2,
+                    borderColor: selected ? colors.primary : tried && !draft.clientType ? colors.danger : colors.border,
+                    backgroundColor: selected ? colors.primaryDim : colors.background,
+                  }}
                 >
-                  <Text weight={selected ? 'bold' : 'semibold'} style={{ color: selected ? colors.primary : colors.textSecondary }}>{t.label}</Text>
+                  <View style={{ marginBottom: 4 }}>{t.icon}</View>
+                  <Text weight="bold" style={{ fontSize: 15 }}>{t.label}</Text>
+                  <Text style={{ fontSize: 12, color: colors.textSecondary }}>{t.desc}</Text>
                 </Pressable>
               )
             })}
