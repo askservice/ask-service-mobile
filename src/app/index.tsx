@@ -2,21 +2,28 @@ import MaterialIcons from '@expo/vector-icons/MaterialIcons'
 import { router } from 'expo-router'
 import { useRef, useState, type ComponentRef } from 'react'
 import { ActivityIndicator, Keyboard, Pressable, ScrollView, TextInput, View } from 'react-native'
-import { SafeAreaView } from 'react-native-safe-area-context'
 
 import { useServiceGroups } from '@/api/requests'
-import { BottomBar } from '@/components/BottomBar'
+import { useMyRequests, useProfile } from '@/api/me'
+import { RequestCard } from '@/components/RequestCard'
 import { ServiceIconBadge } from '@/components/ServiceIcon'
+import { TabScreen } from '@/components/TabScreen'
 import { Button, ErrorText, Text } from '@/components/ui'
+import { isOngoing } from '@/lib/requests'
 import { matchesSearch } from '@/lib/search'
 import type { Service } from '@/lib/types'
 import { useDraft } from '@/state/draft'
+import { useSession } from '@/state/session'
 import { colors, fonts, radius } from '@/theme'
 
-// Home (signed out): "De quoi avez-vous besoin ?" and a search field that opens the list of
-// services (grouped by category, filtered while typing), then follow a request.
+// Home: "De quoi avez-vous besoin ?" and a search field that opens the list of services (grouped
+// by category, filtered while typing). Signed out: follow a request; signed in: the ongoing one.
 export default function Home() {
   const { reset, update } = useDraft()
+  const { token } = useSession()
+  const profile = useProfile()
+  const requests = useMyRequests()
+  const ongoing = (requests.data?.data ?? []).find(isOngoing)
   const { data: groups, isLoading, error, refetch } = useServiceGroups()
   const [search, setSearch] = useState('')
   const [open, setOpen] = useState(false)
@@ -46,7 +53,7 @@ export default function Home() {
   }
 
   return (
-    <SafeAreaView edges={['top']} style={{ flex: 1, backgroundColor: colors.background }}>
+    <TabScreen active="accueil">
       <ScrollView contentContainerStyle={{ padding: 20, gap: 20 }} keyboardShouldPersistTaps="handled">
         <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
@@ -55,16 +62,19 @@ export default function Home() {
             </View>
             <Text weight="bold" style={{ fontSize: 18 }}>Ask Service</Text>
           </View>
-          <Pressable
-            accessibilityRole="button"
-            onPress={() => router.push('/bientot')}
-            style={{ height: 40, paddingHorizontal: 14, borderRadius: 20, borderWidth: 1, borderColor: colors.border, backgroundColor: colors.card, justifyContent: 'center' }}
-          >
-            <Text weight="semibold" style={{ fontSize: 14 }}>Se connecter</Text>
-          </Pressable>
+          {token ? null : (
+            <Pressable
+              accessibilityRole="button"
+              onPress={() => router.push('/connexion')}
+              style={{ height: 40, paddingHorizontal: 14, borderRadius: 20, borderWidth: 1, borderColor: colors.border, backgroundColor: colors.card, justifyContent: 'center' }}
+            >
+              <Text weight="semibold" style={{ fontSize: 14 }}>Se connecter</Text>
+            </Pressable>
+          )}
         </View>
 
         <View style={{ gap: 6 }}>
+          {token && profile.data?.first_name ? <Text style={{ color: colors.textMuted }}>{`Bonjour ${profile.data.first_name}`}</Text> : null}
           <Text weight="bold" accessibilityRole="header" style={{ fontSize: 28, lineHeight: 32 }}>De quoi avez-vous besoin ?</Text>
           <Text style={{ color: colors.textSecondary, lineHeight: 21 }}>Décrivez votre besoin, jusqu’à 3 professionnels vérifiés vous répondent.</Text>
         </View>
@@ -129,7 +139,14 @@ export default function Home() {
           ) : null}
         </View>
 
-        {!open ? (
+        {!open && token && ongoing ? (
+          <View style={{ gap: 10 }}>
+            <Text weight="bold" style={{ fontSize: 16 }}>Votre demande en cours</Text>
+            <RequestCard request={ongoing} />
+          </View>
+        ) : null}
+
+        {!open && !token ? (
           <>
             <View style={{ backgroundColor: colors.card, borderWidth: 1, borderColor: colors.borderSubtle, borderRadius: radius.xl, padding: 16, gap: 12 }}>
               <View style={{ flexDirection: 'row', gap: 12 }}>
@@ -141,7 +158,7 @@ export default function Home() {
                   <Text style={{ fontSize: 13, color: colors.textMuted, lineHeight: 18 }}>Connectez-vous avec l’e-mail ou le téléphone utilisé pour suivre vos devis.</Text>
                 </View>
               </View>
-              <Button label="Suivre ma demande" variant="outline" onPress={() => router.push('/bientot')} />
+              <Button label="Suivre ma demande" variant="outline" onPress={() => router.push('/connexion')} />
             </View>
 
             <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
@@ -155,7 +172,6 @@ export default function Home() {
           </>
         ) : null}
       </ScrollView>
-      <BottomBar active="accueil" onTab={(key) => key !== 'accueil' && router.push('/bientot')} onNewRequest={() => start()} />
-    </SafeAreaView>
+    </TabScreen>
   )
 }

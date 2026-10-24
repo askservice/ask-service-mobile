@@ -13,6 +13,7 @@ import { StatusBar } from 'expo-status-bar'
 import { useEffect, useState } from 'react'
 
 import { DraftProvider } from '@/state/draft'
+import { SessionProvider } from '@/state/session'
 import { colors } from '@/theme'
 
 SplashScreen.preventAutoHideAsync()
@@ -35,14 +36,20 @@ export default function RootLayout() {
 
   return (
     <QueryClientProvider client={queryClient}>
-      <DraftProvider>
-        <StatusBar style="dark" />
-        <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: colors.background } }}>
-          <Stack.Screen name="index" />
-          <Stack.Screen name="demande" options={{ presentation: 'fullScreenModal', gestureEnabled: false }} />
-          <Stack.Screen name="bientot" />
-        </Stack>
-      </DraftProvider>
+      <SessionProvider>
+        <DraftProvider>
+          <StatusBar style="dark" />
+          <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: colors.background } }}>
+            {/* Tabs of the bottom bar: switched without animation. */}
+            <Stack.Screen name="index" options={{ animation: 'none' }} />
+            <Stack.Screen name="demandes/index" options={{ animation: 'none' }} />
+            <Stack.Screen name="messages/index" options={{ animation: 'none' }} />
+            <Stack.Screen name="compte" options={{ animation: 'none' }} />
+            <Stack.Screen name="demande" options={{ presentation: 'fullScreenModal', gestureEnabled: false }} />
+            <Stack.Screen name="connexion" options={{ presentation: 'modal' }} />
+          </Stack>
+        </DraftProvider>
+      </SessionProvider>
     </QueryClientProvider>
   )
 }
