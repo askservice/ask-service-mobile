@@ -63,7 +63,7 @@ export default function ServiceStep() {
                 placeholder="Rechercher un service"
                 placeholderTextColor={colors.textMuted}
                 accessibilityLabel="Rechercher un service"
-                style={{ flex: 1, fontFamily: fonts.regular, fontSize: 15, color: colors.text }}
+                style={{ flex: 1, alignSelf: 'stretch', fontFamily: fonts.regular, fontSize: 15, color: colors.text }}
               />
             </View>
 
