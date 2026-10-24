@@ -43,7 +43,12 @@ export default function ServiceStep() {
     <SafeAreaView style={{ flex: 1, backgroundColor: colors.card }}>
       <ScrollView contentContainerStyle={{ padding: 20, gap: 18 }} keyboardShouldPersistTaps="handled">
         <StepHeader step={1} total={total} close onBack={() => router.back()} />
-        <Title>{choosing ? 'Quel service vous faut-il ?' : 'Votre demande'}</Title>
+        <View style={{ gap: 4, alignItems: 'center' }}>
+          <Title style={{ textAlign: 'center' }}>Votre besoin</Title>
+          <Text style={{ textAlign: 'center', color: colors.textSecondary, fontSize: 14 }}>Sélectionnez le service et votre profil.</Text>
+        </View>
+
+        <Text weight="bold" style={{ marginBottom: -8 }}>Catégorie de service</Text>
 
         {!choosing && draft.service ? (
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12, padding: 12, borderRadius: radius.md, borderWidth: 2, borderColor: colors.primary, backgroundColor: colors.primaryDim }}>
