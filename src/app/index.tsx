@@ -1,6 +1,6 @@
 import MaterialIcons from '@expo/vector-icons/MaterialIcons'
 import { router } from 'expo-router'
-import { useState } from 'react'
+import { useRef, useState, type ComponentRef } from 'react'
 import { ActivityIndicator, Keyboard, Pressable, ScrollView, TextInput, View } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 
@@ -20,10 +20,17 @@ export default function Home() {
   const { data: groups, isLoading, error, refetch } = useServiceGroups()
   const [search, setSearch] = useState('')
   const [open, setOpen] = useState(false)
+  const input = useRef<ComponentRef<typeof TextInput>>(null)
 
   const shownGroups = (groups ?? [])
     .map((g) => ({ ...g, child_categories: g.child_categories.filter((s) => matchesSearch(s.title, search)) }))
     .filter((g) => g.child_categories.length > 0)
+
+  // The whole field opens the list (not only the text zone, small on Android).
+  const openList = () => {
+    setOpen(true)
+    input.current?.focus()
+  }
 
   const close = () => {
     setOpen(false)
@@ -63,9 +70,14 @@ export default function Home() {
         </View>
 
         <View style={{ gap: 8 }}>
-          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, height: 54, paddingHorizontal: 16, borderRadius: radius.md, backgroundColor: colors.card, borderWidth: open ? 2 : 1, borderColor: open ? colors.primary : colors.border }}>
+          <Pressable
+            onPress={openList}
+            accessibilityLabel="Ouvrir la liste des services"
+            style={{ flexDirection: 'row', alignItems: 'center', gap: 10, height: 54, paddingHorizontal: 16, borderRadius: radius.md, backgroundColor: colors.card, borderWidth: open ? 2 : 1, borderColor: open ? colors.primary : colors.border }}
+          >
             <MaterialIcons name="search" size={22} color={open ? colors.primary : colors.textMuted} />
             <TextInput
+              ref={input}
               value={search}
               onChangeText={(t) => { setSearch(t); setOpen(true) }}
               onFocus={() => setOpen(true)}
@@ -73,7 +85,7 @@ export default function Home() {
               placeholderTextColor={colors.textMuted}
               accessibilityLabel="Rechercher un service"
               returnKeyType="search"
-              style={{ flex: 1, fontFamily: fonts.regular, fontSize: 15, color: colors.text }}
+              style={{ flex: 1, alignSelf: 'stretch', fontFamily: fonts.regular, fontSize: 15, color: colors.text }}
             />
             {open ? (
               <Pressable accessibilityRole="button" accessibilityLabel="Fermer la liste" onPress={close} hitSlop={8}>
@@ -82,7 +94,7 @@ export default function Home() {
             ) : (
               <MaterialIcons name="expand-more" size={24} color={colors.textMuted} />
             )}
-          </View>
+          </Pressable>
 
           {open ? (
             <View style={{ padding: 6, borderRadius: radius.lg, borderWidth: 1, borderColor: colors.border, backgroundColor: colors.card }}>
