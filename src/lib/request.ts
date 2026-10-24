@@ -23,6 +23,8 @@ export function requestPayload(draft: Draft, questions: Question[]) {
     state: draft.location.state,
     country: draft.location.country,
     address_1: draft.location.address,
+    // Tells the backend the request comes from the mobile app (website = "web").
+    source: 'app',
   }
 }
 
