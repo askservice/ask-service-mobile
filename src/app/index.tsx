@@ -1,7 +1,7 @@
 import MaterialIcons from '@expo/vector-icons/MaterialIcons'
 import { router } from 'expo-router'
 import { useRef, useState, type ComponentRef } from 'react'
-import { ActivityIndicator, Keyboard, Pressable, ScrollView, TextInput, View } from 'react-native'
+import { ActivityIndicator, Image, Keyboard, Pressable, ScrollView, TextInput, View } from 'react-native'
 
 import { useServiceGroups } from '@/api/requests'
 import { useMyRequests, useProfile } from '@/api/me'
@@ -56,12 +56,8 @@ export default function Home() {
     <TabScreen active="accueil">
       <ScrollView contentContainerStyle={{ padding: 20, gap: 20 }} keyboardShouldPersistTaps="handled">
         <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
-          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-            <View style={{ width: 32, height: 32, borderRadius: 9, backgroundColor: colors.primary, alignItems: 'center', justifyContent: 'center' }}>
-              <Text weight="extrabold" style={{ color: colors.white, fontSize: 15 }}>AS</Text>
-            </View>
-            <Text weight="bold" style={{ fontSize: 18 }}>Ask Service</Text>
-          </View>
+          {/* Client logo of the website (public/images/email/logo-client.png). */}
+          <Image source={require('@/assets/images/logo-client.png')} accessibilityLabel="Ask Service" style={{ height: 44, width: 74 }} resizeMode="contain" />
           {token ? null : (
             <Pressable
               accessibilityRole="button"
