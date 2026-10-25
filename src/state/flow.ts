@@ -9,7 +9,8 @@ import { requestPayload, submitOutcome, type SubmitOutcome } from '@/lib/request
 import { useDraft } from './draft'
 
 /**
- * Screens of the flow: 1 service, 2 address, then one per question step, then contact details.
+ * Screens of the flow: 1 service, 2 address, then one per question step, contact details and
+ * the summary.
  * Returns the questions of the chosen service and the step numbers of each screen.
  */
 export function useFlowSteps() {
@@ -22,7 +23,7 @@ export function useFlowSteps() {
     isLoading,
     error,
     refetch,
-    total: steps.length + 3,
+    total: steps.length + 4,
     contactStep: steps.length + 3,
   }
 }

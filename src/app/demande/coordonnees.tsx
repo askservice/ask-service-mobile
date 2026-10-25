@@ -4,34 +4,26 @@ import { useState } from 'react'
 import { KeyboardAvoidingView, Platform, ScrollView, View } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 
-import { Button, ErrorText, Field, Footer, StepHeader, Text, Title } from '@/components/ui'
+import { Button, Field, Footer, StepHeader, Text, Title } from '@/components/ui'
 import { contactErrors, type ContactErrors } from '@/lib/contact'
 import type { Contact } from '@/lib/types'
 import { useDraft } from '@/state/draft'
-import { followOutcome, useFlowSteps, useSubmitRequest } from '@/state/flow'
+import { useFlowSteps } from '@/state/flow'
 import { colors, radius } from '@/theme'
 
-// Last step: contact details, then the request is sent (a code follows for a new client).
+// Contact details, checked before the summary.
 export default function ContactStep() {
   const { draft, update } = useDraft()
   const { total, contactStep } = useFlowSteps()
-  const submit = useSubmitRequest()
   const [errors, setErrors] = useState<ContactErrors>({})
-  const [sending, setSending] = useState(false)
-  const [submitError, setSubmitError] = useState<string | null>(null)
 
   const c = draft.contact
   const set = (key: keyof Contact) => (value: string) => update({ contact: { ...c, [key]: value } })
 
-  const send = async () => {
+  const next = () => {
     const found = contactErrors(c)
     setErrors(found)
-    if (Object.keys(found).length > 0) return
-    setSubmitError(null)
-    setSending(true)
-    const outcome = await submit()
-    setSending(false)
-    setSubmitError(followOutcome(outcome))
+    if (Object.keys(found).length === 0) router.push('/demande/recapitulatif')
   }
 
   return (
@@ -55,11 +47,9 @@ export default function ContactStep() {
               Vos coordonnées vont uniquement aux professionnels qui prennent votre demande (3 au maximum).
             </Text>
           </View>
-          {submitError ? <ErrorText>{submitError}</ErrorText> : null}
         </ScrollView>
         <Footer>
-          <Button label="Recevoir mes devis" onPress={send} loading={sending} />
-          <Text style={{ textAlign: 'center', fontSize: 12, color: colors.textMuted }}>Un code de confirmation vous sera envoyé par SMS ou e-mail.</Text>
+          <Button label="Continuer" onPress={next} />
         </Footer>
       </KeyboardAvoidingView>
     </SafeAreaView>
