@@ -17,7 +17,7 @@ import { useSession } from '@/state/session'
 import { colors, fonts, radius } from '@/theme'
 
 // Home: "De quoi avez-vous besoin ?" and a search field that opens the list of services (grouped
-// by category, filtered while typing). Signed out: follow a request; signed in: the ongoing one.
+// by category, filtered while typing). Signed out: two reassurance lines; signed in: the ongoing request.
 export default function Home() {
   const { reset, update } = useDraft()
   const { token } = useSession()
@@ -69,7 +69,7 @@ export default function Home() {
           )}
         </View>
 
-        <View style={{ gap: 6 }}>
+        <View style={{ gap: 6, marginTop: 16 }}>
           {token && profile.data?.first_name ? <Text style={{ color: colors.textMuted }}>{`Bonjour ${profile.data.first_name}`}</Text> : null}
           <Text weight="bold" accessibilityRole="header" style={{ fontSize: 28, lineHeight: 32 }}>De quoi avez-vous besoin ?</Text>
           <Text style={{ color: colors.textSecondary, lineHeight: 21 }}>Décrivez votre besoin, jusqu’à 3 professionnels vérifiés vous répondent.</Text>
@@ -143,29 +143,14 @@ export default function Home() {
         ) : null}
 
         {!open && !token ? (
-          <>
-            <View style={{ backgroundColor: colors.card, borderWidth: 1, borderColor: colors.borderSubtle, borderRadius: radius.xl, padding: 16, gap: 12 }}>
-              <View style={{ flexDirection: 'row', gap: 12 }}>
-                <View style={{ width: 40, height: 40, borderRadius: 12, backgroundColor: colors.primaryDim, alignItems: 'center', justifyContent: 'center' }}>
-                  <MaterialIcons name="assignment" size={20} color={colors.primary} />
-                </View>
-                <View style={{ flex: 1, gap: 3 }}>
-                  <Text weight="bold">Vous avez déjà fait une demande ?</Text>
-                  <Text style={{ fontSize: 13, color: colors.textMuted, lineHeight: 18 }}>Connectez-vous avec l’e-mail ou le téléphone utilisé pour suivre vos devis.</Text>
-                </View>
+          <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
+            {['Sans compte à créer', 'Gratuit, sans engagement'].map((t) => (
+              <View key={t} style={{ flexDirection: 'row', alignItems: 'center', gap: 5 }}>
+                <MaterialIcons name="check" size={16} color={colors.success} />
+                <Text style={{ fontSize: 12, color: colors.textSecondary }}>{t}</Text>
               </View>
-              <Button label="Suivre ma demande" variant="outline" onPress={() => router.push('/connexion')} />
-            </View>
-
-            <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
-              {['Sans compte à créer', 'Gratuit, sans engagement'].map((t) => (
-                <View key={t} style={{ flexDirection: 'row', alignItems: 'center', gap: 5 }}>
-                  <MaterialIcons name="check" size={16} color={colors.success} />
-                  <Text style={{ fontSize: 12, color: colors.textSecondary }}>{t}</Text>
-                </View>
-              ))}
-            </View>
-          </>
+            ))}
+          </View>
         ) : null}
       </ScrollView>
     </TabScreen>
