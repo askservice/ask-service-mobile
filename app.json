@@ -41,7 +41,8 @@
         {
           "locationWhenInUsePermission": "Ask Service utilise votre position pour remplir l'adresse de l'intervention."
         }
-      ]
+      ],
+      "@react-native-google-signin/google-signin"
     ],
     "experiments": {
       "typedRoutes": true,

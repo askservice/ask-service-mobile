@@ -41,6 +41,12 @@ export const verifyPhoneCode = (phone: string, otp: string) =>
 export const verifyEmailCode = (email: string, otp: string) =>
   api<Session>('/user/verify-email', { method: 'POST', body: { email, otp } })
 
+/** Client sign-in: code sent to the e-mail (same answer whether or not the address has an account). */
+export const sendLoginCode = (email: string) => api('/user/login-code/send', { method: 'POST', body: { email } })
+
+export const verifyLoginCode = (email: string, otp: string) =>
+  api<Session>('/user/login-code/verify', { method: 'POST', body: { email, otp } })
+
 /** Signed-in client confirming the number typed in the request. */
 export const verifyAccountPhoneCode = (otp: string, token: string) =>
   api('/user/phone-verification/verify', { method: 'POST', body: { otp }, token })
