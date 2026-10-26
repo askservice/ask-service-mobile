@@ -3,7 +3,7 @@ import { useState } from 'react'
 import { KeyboardAvoidingView, Platform, ScrollView, View } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 
-import { resendEmailCode, verifyEmailCode } from '@/api/requests'
+import { sendLoginCode, verifyLoginCode } from '@/api/requests'
 import { CODE_LENGTH, CodeInput } from '@/components/CodeInput'
 import { ResendCode } from '@/components/ResendCode'
 import { Button, ErrorText, Field, Footer, IconButton, Text, Title } from '@/components/ui'
@@ -13,6 +13,7 @@ import { useSession } from '@/state/session'
 import { colors } from '@/theme'
 
 const NETWORK_ERROR = 'Connexion impossible. Vérifiez votre réseau et réessayez.'
+const VENDOR_ACCOUNT = 'Cette adresse est celle d’un compte prestataire : connectez-vous sur le site, dans l’espace prestataire.'
 
 // Sign-in without password: the client's e-mail, then the 6-digit code sent to it.
 export default function SignIn() {
@@ -25,8 +26,8 @@ export default function SignIn() {
 
   const sendCode = async (): Promise<string | null> => {
     try {
-      const res = await resendEmailCode(email.trim())
-      if (res.status === 404) return 'Aucun compte avec cet e-mail. Faites une demande pour en créer un.'
+      const res = await sendLoginCode(email.trim())
+      if ((res.body.data as { flow?: string } | undefined)?.flow === 'VENDOR_ACCOUNT') return VENDOR_ACCOUNT
       return res.status >= 400 ? res.body.message || 'Le code n’a pas pu être envoyé.' : null
     } catch {
       return NETWORK_ERROR
@@ -48,7 +49,7 @@ export default function SignIn() {
     setError(null)
     setBusy(true)
     try {
-      const res = await verifyEmailCode(email.trim(), value)
+      const res = await verifyLoginCode(email.trim(), value)
       const token = (res.body.data as { token?: string; role?: unknown } | undefined)?.token
       if (res.status >= 400 || !token) { setError(res.body.message || 'Code invalide. Veuillez réessayer.'); return }
       const refusal = loginRefusal((res.body.data as { role?: unknown }).role)
@@ -97,8 +98,9 @@ export default function SignIn() {
               <View style={{ gap: 8 }}>
                 <Title>Vérifiez votre e-mail</Title>
                 <Text style={{ color: colors.textSecondary, lineHeight: 21 }}>
-                  {`Saisissez le code à ${CODE_LENGTH} chiffres envoyé à `}
-                  <Text weight="bold">{email.trim()}</Text>.
+                  {`Si un compte existe pour `}
+                  <Text weight="bold">{email.trim()}</Text>
+                  {`, vous allez recevoir un code à ${CODE_LENGTH} chiffres. Pas reçu ? Vérifiez l’adresse et vos courriers indésirables.`}
                 </Text>
               </View>
               <CodeInput value={code} onChange={setCode} onComplete={verify} />
