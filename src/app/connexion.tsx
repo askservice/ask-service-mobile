@@ -1,6 +1,7 @@
+import AntDesign from '@expo/vector-icons/AntDesign'
 import { router } from 'expo-router'
 import { useState } from 'react'
-import { KeyboardAvoidingView, Platform, ScrollView, View } from 'react-native'
+import { KeyboardAvoidingView, Platform, Pressable, ScrollView, View } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 
 import { sendLoginCode, verifyLoginCode } from '@/api/requests'
@@ -9,8 +10,9 @@ import { ResendCode } from '@/components/ResendCode'
 import { Button, ErrorText, Field, Footer, IconButton, Text, Title } from '@/components/ui'
 import { loginRefusal } from '@/lib/auth'
 import { isValidEmail } from '@/lib/contact'
+import { GoogleSignInError, googleSignInAvailable, signInWithGoogle } from '@/lib/googleSignIn'
 import { useSession } from '@/state/session'
-import { colors } from '@/theme'
+import { colors, radius } from '@/theme'
 
 const NETWORK_ERROR = 'Connexion impossible. Vérifiez votre réseau et réessayez.'
 const VENDOR_ACCOUNT = 'Cette adresse est celle d’un compte prestataire : connectez-vous sur le site, dans l’espace prestataire.'
@@ -42,6 +44,26 @@ export default function SignIn() {
     setBusy(false)
     if (failure) setError(failure)
     else setStep('code')
+  }
+
+  // Same as the website: Google account, client accounts only (the API refuses a vendor).
+  const google = async () => {
+    setError(null)
+    setBusy(true)
+    try {
+      const res = await signInWithGoogle()
+      if (!res) return
+      const token = res.body.data?.token
+      if (res.status >= 400 || !token) { setError(res.body.message || 'La connexion avec Google n’a pas abouti. Veuillez réessayer.'); return }
+      const refusal = loginRefusal(res.body.data?.role)
+      if (refusal) { setError(refusal); return }
+      await signIn(token)
+      router.replace('/demandes')
+    } catch (err) {
+      setError(err instanceof GoogleSignInError ? err.message : NETWORK_ERROR)
+    } finally {
+      setBusy(false)
+    }
   }
 
   const verify = async (value = code) => {
@@ -92,6 +114,36 @@ export default function SignIn() {
                 autoFocus
                 onSubmitEditing={askCode}
               />
+              {googleSignInAvailable ? (
+                <>
+                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
+                    <View style={{ flex: 1, height: 1, backgroundColor: colors.border }} />
+                    <Text style={{ fontSize: 13, color: colors.textMuted }}>ou</Text>
+                    <View style={{ flex: 1, height: 1, backgroundColor: colors.border }} />
+                  </View>
+                  <Pressable
+                    accessibilityRole="button"
+                    accessibilityState={{ disabled: busy }}
+                    disabled={busy}
+                    onPress={google}
+                    style={({ pressed }) => ({
+                      height: 54,
+                      borderRadius: radius.lg,
+                      borderWidth: 1,
+                      borderColor: colors.border,
+                      backgroundColor: colors.card,
+                      flexDirection: 'row',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      gap: 10,
+                      opacity: pressed ? 0.85 : 1,
+                    })}
+                  >
+                    <AntDesign name="google" size={20} color={colors.text} />
+                    <Text weight="bold" style={{ fontSize: 17 }}>Continuer avec Google</Text>
+                  </Pressable>
+                </>
+              ) : null}
             </>
           ) : (
             <>

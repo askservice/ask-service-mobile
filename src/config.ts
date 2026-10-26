@@ -4,3 +4,9 @@ export const API_URL = (process.env.EXPO_PUBLIC_API_URL || 'https://api.askservi
 
 // French address search of the IGN Géoplateforme (Base Adresse Nationale), free and without key.
 export const GEOCODING_URL = 'https://data.geopf.fr/geocodage'
+
+// Google sign-in (same Firebase project as the website, ask-service--login). The web API key is
+// public (it is in the website's code). GOOGLE_WEB_CLIENT_ID: OAuth client of type "Web" of
+// that project (google-services.json, oauth_client with client_type 3); empty = no Google button.
+export const FIREBASE_API_KEY = process.env.EXPO_PUBLIC_FIREBASE_API_KEY || 'AIzaSyBm-6Ffv6IK8HcuPpGM370LVbZc1kTQ058'
+export const GOOGLE_WEB_CLIENT_ID = process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID || ''
