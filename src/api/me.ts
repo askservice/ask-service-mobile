@@ -1,6 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useEffect } from 'react'
 
+import type { ProfileUpdate } from '@/lib/profile'
 import type { Chat, Message, MyRequest, NotificationPrefs, Profile } from '@/lib/types'
 import { useSession } from '@/state/session'
 
@@ -68,3 +69,7 @@ export const saveNotificationPrefs = (token: string | null, prefs: NotificationP
   apiSend('/user/notification', 'PUT', token, prefs)
 
 export const deleteAccount = (token: string | null, reason: string) => apiSend('/user/delete-account', 'PUT', token, { reason })
+
+/** phone_otp_sent: set when the phone changed, false when no SMS could be sent yet. */
+export const updateProfile = (token: string | null, body: ProfileUpdate) =>
+  apiSend<{ phone_otp_sent?: boolean }>('/user/update-profile', 'PUT', token, body)
