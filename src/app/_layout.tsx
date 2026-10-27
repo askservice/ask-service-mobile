@@ -14,6 +14,7 @@ import { useEffect, useState, type ReactNode } from 'react'
 import { View } from 'react-native'
 
 import { DraftProvider } from '@/state/draft'
+import { LiveProvider } from '@/state/live'
 import { SessionProvider, useSession } from '@/state/session'
 import { colors } from '@/theme'
 
@@ -54,6 +55,7 @@ export default function RootLayout() {
   return (
     <QueryClientProvider client={queryClient}>
       <SessionProvider>
+        <LiveProvider>
         <DraftProvider>
           <ActivityTracker>
             <StatusBar style="dark" />
@@ -68,6 +70,7 @@ export default function RootLayout() {
             </Stack>
           </ActivityTracker>
         </DraftProvider>
+        </LiveProvider>
       </SessionProvider>
     </QueryClientProvider>
   )
