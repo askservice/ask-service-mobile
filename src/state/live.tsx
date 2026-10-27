@@ -1,6 +1,6 @@
 import { useQueryClient } from '@tanstack/react-query'
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
-import { AppState } from 'react-native'
+import { AppState, type AppStateStatus } from 'react-native'
 import { io, type Socket } from 'socket.io-client'
 
 import { API_URL } from '@/config'
@@ -15,6 +15,14 @@ import { useSession } from './session'
 // tells who is online among the people the client talks with.
 
 const RECEIVED = ['message recieved', 'message received']
+
+// Only "background" closes the socket: at launch Android may report "unknown" (or nothing) before
+// the first change, and iOS goes "inactive" for a moment (notification centre, app switcher).
+export const isForeground = (state: AppStateStatus | string | null | undefined) => state !== 'background'
+
+const debug = (...args: unknown[]) => {
+  if (__DEV__) console.log('[live]', ...args)
+}
 
 type Live = {
   online: ReadonlySet<string>
@@ -32,19 +40,23 @@ export function LiveProvider({ children }: { children: ReactNode }) {
   const socket = useRef<Socket | null>(null)
   const openChat = useRef<string | null>(null)
   const [online, setOnline] = useState<ReadonlySet<string>>(new Set())
-  const [active, setActive] = useState(AppState.currentState === 'active')
+  const [active, setActive] = useState(isForeground(AppState.currentState))
 
   useEffect(() => {
-    const sub = AppState.addEventListener('change', (state) => setActive(state === 'active'))
+    const sub = AppState.addEventListener('change', (state) => setActive(isForeground(state)))
     return () => sub.remove()
   }, [])
 
   useEffect(() => {
-    if (!token || !active) return
+    if (!token || !active) { debug('no socket', { signedIn: Boolean(token), active }); return }
     const s = io(API_URL, { transports: ['websocket'], auth: { token } })
     socket.current = s
+    debug('connecting to', API_URL)
 
+    s.on('connect_error', (e) => debug('connect_error', e.message))
+    s.on('disconnect', (reason) => debug('disconnected', reason))
     s.on('connect', () => {
+      debug('connected', s.id)
       s.emit('setup', {})
       if (openChat.current) s.emit('join chat', openChat.current)
       // Messages may have arrived while disconnected (app in background, network loss).
@@ -60,6 +72,7 @@ export function LiveProvider({ children }: { children: ReactNode }) {
     }))
     const received = (m: Message) => {
       const chatId = messageChatId(m)
+      debug('message received in', chatId)
       if (!chatId) return
       queryClient.setQueryData<{ messages?: Message[] | null }>(['me', 'messages', chatId], (old) =>
         old ? { ...old, messages: withMessage(old.messages, m) } : old)

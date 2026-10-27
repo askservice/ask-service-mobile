@@ -31,3 +31,15 @@ describe('live messages', () => {
     expect(withMessage(undefined, message('a')).map((m) => m._id)).toEqual(['a'])
   })
 })
+
+describe('foreground', () => {
+  // Imported here: live.tsx pulls React Native, mocked by jest-expo.
+  const { isForeground } = jest.requireActual('../../state/live') as typeof import('../../state/live')
+  it('keeps the socket unless the app is in the background', () => {
+    expect(isForeground('active')).toBe(true)
+    expect(isForeground('inactive')).toBe(true)
+    expect(isForeground('unknown')).toBe(true)
+    expect(isForeground(null)).toBe(true)
+    expect(isForeground('background')).toBe(false)
+  })
+})
