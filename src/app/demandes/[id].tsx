@@ -4,11 +4,13 @@ import { useState } from 'react'
 import { ActivityIndicator, Alert, Pressable, RefreshControl, ScrollView, View } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 
-import { acceptQuote, closeRequest, ignoreQuote, openChat, useMeAction, useMyRequest } from '@/api/me'
+import { acceptQuote, closeRequest, ignoreQuote, openApiFile, openChat, quoteAttachmentPath, useMeAction, useMyRequest } from '@/api/me'
 import { StatusBadge } from '@/components/RequestCard'
+import { AttachmentRow } from '@/components/Attachment'
 import { Button, ErrorText, Field, IconButton, OptionButton, Text } from '@/components/ui'
 import { CLOSE_REASONS, initials, isOngoing, providerName, quotePrice, requestBadge, requestTitle, sentLabel, sortQuotes } from '@/lib/requests'
 import type { Quote } from '@/lib/types'
+import { useSession } from '@/state/session'
 import { colors, radius } from '@/theme'
 
 const REFRESH = [['requests'], ['request'], ['chats']]
@@ -91,6 +93,8 @@ function QuoteCard({ quote: q, requestId, editable }: { quote: Quote; requestId:
   const accept = useMeAction(acceptQuote, REFRESH)
   const ignore = useMeAction(ignoreQuote, REFRESH)
   const chat = useMeAction(openChat, [['chats']])
+  const { token } = useSession()
+  const [opening, setOpening] = useState(false)
   const name = providerName(q)
   const accepted = q.status === 'ACCEPTED'
   const ignored = q.status === 'IGNORED'
@@ -106,6 +110,16 @@ function QuoteCard({ quote: q, requestId, editable }: { quote: Quote; requestId:
     'Le prestataire ne pourra plus vous proposer ce devis.',
     [{ text: 'Annuler', style: 'cancel' }, { text: 'Refuser', style: 'destructive', onPress: () => ignore.mutate({ requestId, quoteId: q._id }) }],
   )
+  const openFile = async () => {
+    setOpening(true)
+    try {
+      await openApiFile(token, quoteAttachmentPath(requestId, q._id))
+    } catch {
+      Alert.alert('Fichier indisponible', 'Le devis joint n’a pas pu être ouvert. Réessayez dans un instant.')
+    } finally {
+      setOpening(false)
+    }
+  }
   const write = () => chat.mutate({ vendorId: q.vendor_id, quoteId: q._id }, {
     onSuccess: (c) => (c?._id ? router.push({ pathname: '/messages/[id]', params: { id: c._id, name } }) : router.push('/messages')),
   })
@@ -132,6 +146,7 @@ function QuoteCard({ quote: q, requestId, editable }: { quote: Quote; requestId:
         <Text weight="extrabold" style={{ fontSize: 17 }}>{quotePrice(q)}</Text>
       </View>
       {q.service_description ? <Text style={{ color: colors.textSecondary, lineHeight: 20 }}>{q.service_description}</Text> : null}
+      {q.has_attachment ? <AttachmentRow label="Devis joint" loading={opening} onPress={openFile} /> : null}
       {accepted ? <Text weight="bold" style={{ color: colors.successDark }}>Devis accepté</Text> : null}
       {ignored ? <Text weight="semibold" style={{ color: colors.textMuted }}>Devis refusé</Text> : null}
 

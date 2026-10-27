@@ -1,5 +1,8 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { Directory, File, Paths } from 'expo-file-system'
 import { useEffect } from 'react'
+
+import { API_URL } from '@/config'
 
 import type { ProfileUpdate } from '@/lib/profile'
 import type { Chat, Message, MyRequest, NotificationPrefs, Profile } from '@/lib/types'
@@ -73,3 +76,18 @@ export const deleteAccount = (token: string | null, reason: string) => apiSend('
 /** phone_otp_sent: set when the phone changed, false when no SMS could be sent yet. */
 export const updateProfile = (token: string | null, body: ProfileUpdate) =>
   apiSend<{ phone_otp_sent?: boolean }>('/user/update-profile', 'PUT', token, body)
+
+/** Private file of the API (quote file, message file): downloaded with the session (no storage
+ * link), then shown in the phone's viewer. The file name comes from the API. */
+export async function openApiFile(token: string | null, path: string) {
+  const folder = new Directory(Paths.cache, 'fichiers', path.replace(/[^a-z0-9]+/gi, '-'))
+  if (folder.exists) folder.delete()
+  folder.create({ intermediates: true })
+  const file = await File.downloadFileAsync(`${API_URL}${path}`, folder, {
+    headers: { Authorization: `Bearer ${token ?? ''}`, 'Accept-Language': 'fr' },
+  })
+  await File.preview(file)
+}
+
+export const quoteAttachmentPath = (requestId: string, quoteId: string) =>
+  `/api/user/service-requests/${requestId}/quotes/${quoteId}/attachment`

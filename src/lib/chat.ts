@@ -18,3 +18,12 @@ export function withMessage(list: Message[] | null | undefined, m: Message): Mes
   const current = list ?? []
   return current.some((x) => x._id === m._id) ? current : [m, ...current]
 }
+
+export type Attachment = { path: string; kind: 'image' | 'pdf' | 'file'; label: string }
+
+/** File of a message: private, read through the API with the session (path given by the API). */
+export function attachment(m: Pick<Message, 'media_url' | 'media_kind'>): Attachment | null {
+  if (!m.media_url?.startsWith('/api/')) return null
+  const kind = m.media_kind ?? 'file'
+  return { path: m.media_url, kind, label: kind === 'image' ? 'Photo' : kind === 'pdf' ? 'Document PDF' : 'Pièce jointe' }
+}
