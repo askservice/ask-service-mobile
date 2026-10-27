@@ -15,6 +15,8 @@ export const colors = {
   success: '#10B981',
   successDark: '#047857',
   danger: '#C10007',
+  warning: '#B45309',
+  warningDim: '#FEF3C7',
   white: '#FFFFFF',
 }
 

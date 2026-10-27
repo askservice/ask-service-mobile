@@ -135,6 +135,10 @@ export type Profile = {
   last_name: string
   email: string
   phone?: string | null
+  is_phone_verified?: boolean
+  address?: string | null
+  postal_code?: string | null
+  city?: string | null
   role?: string
   is_vendor?: boolean
 }

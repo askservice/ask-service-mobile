@@ -1,6 +1,6 @@
 import { router, useLocalSearchParams } from 'expo-router'
 import { useState } from 'react'
-import { KeyboardAvoidingView, Platform, View } from 'react-native'
+import { KeyboardAvoidingView, View } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 
 import {
@@ -14,6 +14,7 @@ import {
 import { CODE_LENGTH, CodeInput } from '@/components/CodeInput'
 import { ResendCode } from '@/components/ResendCode'
 import { Button, ErrorText, Footer, IconButton, Text, Title } from '@/components/ui'
+import { KEYBOARD_BEHAVIOR } from '@/lib/keyboard'
 import { useDraft } from '@/state/draft'
 import { followOutcome, useSubmitRequest } from '@/state/flow'
 import { useSession } from '@/state/session'
@@ -79,7 +80,7 @@ export default function CodeStep() {
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: colors.card }}>
-      <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+      <KeyboardAvoidingView style={{ flex: 1 }} behavior={KEYBOARD_BEHAVIOR}>
         <View style={{ flex: 1, padding: 20, gap: 20 }}>
           <IconButton icon="arrow-back" label="Retour" onPress={() => router.back()} />
           <View style={{ gap: 8 }}>

@@ -1,11 +1,12 @@
 import MaterialIcons from '@expo/vector-icons/MaterialIcons'
 import { router } from 'expo-router'
 import { useState } from 'react'
-import { KeyboardAvoidingView, Platform, ScrollView, View } from 'react-native'
+import { KeyboardAvoidingView, ScrollView, View } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 
 import { Button, Field, Footer, StepHeader, Text, Title } from '@/components/ui'
 import { contactErrors, type ContactErrors } from '@/lib/contact'
+import { KEYBOARD_BEHAVIOR, useScrollToEndOnFocus } from '@/lib/keyboard'
 import type { Contact } from '@/lib/types'
 import { useDraft } from '@/state/draft'
 import { useFlowSteps } from '@/state/flow'
@@ -16,6 +17,8 @@ export default function ContactStep() {
   const { draft, update } = useDraft()
   const { total, contactStep } = useFlowSteps()
   const [errors, setErrors] = useState<ContactErrors>({})
+  // « Précisions » is the last field.
+  const { scroll, endField } = useScrollToEndOnFocus()
 
   const c = draft.contact
   const set = (key: keyof Contact) => (value: string) => update({ contact: { ...c, [key]: value } })
@@ -28,8 +31,8 @@ export default function ContactStep() {
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: colors.card }}>
-      <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
-        <ScrollView contentContainerStyle={{ padding: 20, gap: 16 }} keyboardShouldPersistTaps="handled">
+      <KeyboardAvoidingView style={{ flex: 1 }} behavior={KEYBOARD_BEHAVIOR}>
+        <ScrollView ref={scroll} contentContainerStyle={{ padding: 20, gap: 16 }} keyboardShouldPersistTaps="handled">
           <StepHeader step={contactStep} total={total} onBack={() => router.back()} />
           <Title>Comment les pros peuvent-ils vous joindre ?</Title>
 
@@ -39,7 +42,7 @@ export default function ContactStep() {
           </View>
           <Field label="Numéro de téléphone" value={c.phone} onChangeText={set('phone')} placeholder="06 12 34 56 78" keyboardType="phone-pad" autoComplete="tel" textContentType="telephoneNumber" error={errors.phone} />
           <Field label="Adresse e-mail" value={c.email} onChangeText={set('email')} placeholder="marie.dupont@email.fr" keyboardType="email-address" autoCapitalize="none" autoComplete="email" textContentType="emailAddress" error={errors.email} />
-          <Field label="Précisions sur votre besoin" hint="(facultatif)" value={c.notes} onChangeText={set('notes')} placeholder="Ex. : bureaux de 120 m², 2 passages par semaine" multiline numberOfLines={3} />
+          <Field label="Précisions sur votre besoin" hint="(facultatif)" value={c.notes} onChangeText={set('notes')} {...endField} placeholder="Ex. : bureaux de 120 m², 2 passages par semaine" multiline numberOfLines={3} />
 
           <View style={{ flexDirection: 'row', gap: 10, padding: 14, borderRadius: radius.md, backgroundColor: colors.background }}>
             <MaterialIcons name="lock-outline" size={18} color={colors.primary} />

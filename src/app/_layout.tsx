@@ -62,7 +62,7 @@ export default function RootLayout() {
               <Stack.Screen name="index" options={{ animation: 'none' }} />
               <Stack.Screen name="demandes/index" options={{ animation: 'none' }} />
               <Stack.Screen name="messages/index" options={{ animation: 'none' }} />
-              <Stack.Screen name="compte" options={{ animation: 'none' }} />
+              <Stack.Screen name="compte/index" options={{ animation: 'none' }} />
               <Stack.Screen name="demande" options={{ presentation: 'fullScreenModal', gestureEnabled: false }} />
               <Stack.Screen name="connexion" options={{ presentation: 'modal' }} />
             </Stack>

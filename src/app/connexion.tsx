@@ -1,7 +1,6 @@
-import AntDesign from '@expo/vector-icons/AntDesign'
 import { router } from 'expo-router'
 import { useState } from 'react'
-import { KeyboardAvoidingView, Platform, Pressable, ScrollView, View } from 'react-native'
+import { Image, KeyboardAvoidingView, Pressable, ScrollView, View } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 
 import { sendLoginCode, verifyLoginCode } from '@/api/requests'
@@ -11,6 +10,7 @@ import { Button, ErrorText, Field, Footer, IconButton, Text, Title } from '@/com
 import { loginRefusal } from '@/lib/auth'
 import { isValidEmail } from '@/lib/contact'
 import { GoogleSignInError, googleSignInAvailable, signInWithGoogle } from '@/lib/googleSignIn'
+import { KEYBOARD_BEHAVIOR } from '@/lib/keyboard'
 import { useSession } from '@/state/session'
 import { colors, radius } from '@/theme'
 
@@ -87,7 +87,7 @@ export default function SignIn() {
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: colors.card }}>
-      <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+      <KeyboardAvoidingView style={{ flex: 1 }} behavior={KEYBOARD_BEHAVIOR}>
         <ScrollView contentContainerStyle={{ padding: 20, gap: 20 }} keyboardShouldPersistTaps="handled">
           <IconButton
             icon={step === 'code' ? 'arrow-back' : 'close'}
@@ -139,7 +139,7 @@ export default function SignIn() {
                       opacity: pressed ? 0.85 : 1,
                     })}
                   >
-                    <AntDesign name="google" size={20} color={colors.text} />
+                    <Image source={require('@/assets/images/google-g.png')} accessibilityIgnoresInvertColors style={{ width: 20, height: 20 }} />
                     <Text weight="bold" style={{ fontSize: 17 }}>Continuer avec Google</Text>
                   </Pressable>
                 </>
