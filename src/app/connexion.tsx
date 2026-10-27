@@ -1,7 +1,6 @@
-import AntDesign from '@expo/vector-icons/AntDesign'
 import { router } from 'expo-router'
 import { useState } from 'react'
-import { KeyboardAvoidingView, Platform, Pressable, ScrollView, View } from 'react-native'
+import { Image, KeyboardAvoidingView, Platform, Pressable, ScrollView, View } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 
 import { sendLoginCode, verifyLoginCode } from '@/api/requests'
@@ -139,7 +138,7 @@ export default function SignIn() {
                       opacity: pressed ? 0.85 : 1,
                     })}
                   >
-                    <AntDesign name="google" size={20} color={colors.text} />
+                    <Image source={require('@/assets/images/google-g.png')} accessibilityIgnoresInvertColors style={{ width: 20, height: 20 }} />
                     <Text weight="bold" style={{ fontSize: 17 }}>Continuer avec Google</Text>
                   </Pressable>
                 </>
