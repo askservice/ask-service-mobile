@@ -70,6 +70,7 @@ describe('request payload', () => {
       state: 'Centre-Val de Loire',
       country: 'France',
       address_1: "12 Rue Jeanne d'Arc 45000 Orléans",
+      source: 'app',
     })
     expect(body.dynamic_answers).toHaveLength(3)
   })

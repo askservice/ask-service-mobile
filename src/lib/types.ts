@@ -58,3 +58,88 @@ export type Draft = {
   answers: Record<string, Answer>
   contact: Contact
 }
+
+// ── Signed-in client (GET /api/user/get-created-services, quotes, chats, profile) ──
+
+export type QuoteStatus = 'SENT' | 'ACCEPTED' | 'IGNORED' | string
+
+export type Quote = {
+  _id: string
+  vendor_id: string
+  service_request_id: string
+  quote_price: number
+  price?: number
+  price_display?: string
+  service_description?: string
+  available_start_date?: string
+  status: QuoteStatus
+  createdAt: string
+  provider_name?: string
+  rating?: number | null
+  reviews_count?: number
+  vendor?: { _id: string; first_name?: string; last_name?: string; profile_pic?: string | null }
+}
+
+export type MyRequest = {
+  _id: string
+  reference_no: string
+  status: 'ACTIVE' | 'CANCELLED' | 'EXPIRED' | string
+  service_category?: { _id: string; title: string; icon?: string | null } | null
+  child_category?: { _id: string; title: string; icon?: string | null } | null
+  city?: string
+  pincode?: string
+  address_1?: string
+  note?: string
+  createdAt: string
+  /** open | hold | accepted | ignore | closed */
+  quotes_status?: string
+  quotes_count?: number
+  new_quotes_count?: number
+  accepted_quote_message?: string | null
+  accepted_quote_sub_message?: string | null
+  dynamic_answers?: { key: string; label: string; value: string }[] | null
+  quotes?: (Quote | null)[] | null
+}
+
+export type ChatUser = {
+  _id: string
+  first_name?: string
+  last_name?: string
+  business_name?: string | null
+  profile_pic?: string | null
+  itsMe?: boolean
+}
+
+export type Chat = {
+  _id: string
+  users?: ChatUser[] | null
+  latestMessage?: { content?: string; createdAt?: string; sender?: { _id?: string } | string } | null
+  unreadCount?: number
+  updatedAt: string
+  quote_id?: { _id: string; quote_price?: number; service_request_id?: { _id?: string; reference_no?: string } | string } | null
+}
+
+export type Message = {
+  _id: string
+  sender: { _id: string; first_name?: string; last_name?: string }
+  content: string
+  media_url?: string | null
+  chat: { _id: string } | string
+  createdAt: string
+  readBy?: (string | { _id: string })[] | null
+}
+
+export type Profile = {
+  _id: string
+  first_name: string
+  last_name: string
+  email: string
+  phone?: string | null
+  role?: string
+  is_vendor?: boolean
+}
+
+export type NotificationPrefs = {
+  email_notifications?: { new_quotes?: boolean; messages?: boolean; product_updates?: boolean }
+  push_notifications?: { new_quotes?: boolean; messages?: boolean }
+}

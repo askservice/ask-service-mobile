@@ -18,9 +18,9 @@ export default function RequestSent() {
   const { draft, reset } = useDraft()
   const place = draft.location ? ` à ${draft.location.city}` : ''
 
-  const done = () => {
+  const done = (to: '/' | '/demandes') => {
     reset()
-    router.dismissTo('/')
+    router.dismissTo(to)
   }
 
   return (
@@ -54,7 +54,8 @@ export default function RequestSent() {
         </View>
       </ScrollView>
       <Footer>
-        <Button label="Retour à l'accueil" variant="outline" onPress={done} />
+        <Button label="Suivre ma demande" onPress={() => done('/demandes')} />
+        <Button label="Retour à l’accueil" variant="outline" onPress={() => done('/')} />
       </Footer>
     </SafeAreaView>
   )

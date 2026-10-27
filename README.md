@@ -1,24 +1,30 @@
 # Ask Service – application mobile (clients)
 
-Application Android / iOS pour les **clients** d'Ask Service : faire une demande de service et,
-plus tard, suivre ses demandes et devis. La partie prestataires reste sur askservice.fr.
+Application Android / iOS pour les **clients** d’Ask Service : faire une demande de service, puis
+suivre ses demandes, devis et messages. La partie prestataires reste sur askservice.fr.
 
 Expo SDK 58 (React Native), TypeScript, Expo Router, React Query.
 
-## Contenu du prototype (v0.1)
+## Contenu
 
-Parcours « Faire une demande », branché sur l'API Ask Service :
+**Faire une demande** (sans compte) :
 
-1. Accueil : « De quoi avez-vous besoin ? », recherche et services (icônes choisies dans l'admin)
-2. Choix du service (groupé par catégorie) + Particulier / Entreprise
+1. Accueil : « De quoi avez-vous besoin ? », recherche ouvrant la liste des services (icônes de l'admin)
+2. Votre besoin : service choisi + Particulier / Entreprise
 3. Lieu de l'intervention : adresse, ville ou code postal (Base Adresse Nationale), ou position GPS
-4. Questions du service (admin), une étape par écran ; choix unique = gros boutons
-5. Coordonnées
-6. Code de vérification (SMS pour un nouveau client, e-mail pour un client connu)
-7. Demande envoyée
+4. Questions du service (admin), une étape par écran ; choix unique = gros boutons, date = calendrier
+5. Coordonnées, puis code de vérification (SMS pour un nouveau client, e-mail pour un client connu)
+6. Demande envoyée
 
-Le suivi des demandes, les devis, la messagerie, le compte et les notifications push viendront
-dans la version suivante (écran « Bientôt disponible » en attendant).
+**Suivre mes demandes** (client connecté) :
+
+- Connexion sans mot de passe : e-mail, puis code à 6 chiffres reçu par e-mail (comptes prestataires refusés)
+- Mes demandes (en cours / terminées), détail, devis reçus : accepter, refuser, écrire au prestataire, clôturer
+- Messagerie : conversations et messages en temps réel (socket.io), texte seulement
+- Compte : préférences de notifications, liens d'aide, déconnexion, suppression du compte
+
+Pas encore : notifications push (il faut une version de développement EAS + Firebase), photos dans
+la messagerie.
 
 ## Lancer l'application
 
@@ -34,8 +40,8 @@ API utilisée : `https://api.askservice.fr` par défaut. Pour une autre API, cr�
 EXPO_PUBLIC_API_URL=http://192.168.1.20:4000
 ```
 
-Attention : avec l'API de production, une demande envoyée depuis l'application est une vraie
-demande (prestataires prévenus, SMS envoyé).
+Attention : avec l'API de production, tout est réel : une demande envoyée prévient les prestataires
+(SMS envoyé), accepter ou refuser un devis prévient le prestataire.
 
 ## Vérifications
 

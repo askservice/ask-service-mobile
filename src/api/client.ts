@@ -32,9 +32,22 @@ export async function api<T = unknown>(
   return { status: res.status, body: parsed }
 }
 
+export class ApiError extends Error {
+  constructor(message: string, readonly status: number) {
+    super(message)
+  }
+}
+
 /** GET that throws on an HTTP error, for React Query. */
-export async function apiGet<T>(path: string): Promise<T> {
-  const { status, body } = await api<T>(path)
-  if (status >= 400 || body.data === undefined) throw new Error(body.message || `Erreur ${status}`)
+export async function apiGet<T>(path: string, token?: string | null): Promise<T> {
+  const { status, body } = await api<T>(path, { token })
+  if (status >= 400 || body.data === undefined) throw new ApiError(body.message || `Erreur ${status}`, status)
   return body.data
+}
+
+/** Call that throws on an HTTP error (actions of a signed-in client). */
+export async function apiSend<T = unknown>(path: string, method: string, token: string | null, body?: unknown): Promise<T | undefined> {
+  const res = await api<T>(path, { method, token, body })
+  if (res.status >= 400) throw new ApiError(res.body.message || `Erreur ${res.status}`, res.status)
+  return res.body.data
 }
