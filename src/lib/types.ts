@@ -116,7 +116,17 @@ export type Chat = {
   latestMessage?: { content?: string; createdAt?: string; sender?: { _id?: string } | string } | null
   unreadCount?: number
   updatedAt: string
-  quote_id?: { _id: string; quote_price?: number; service_request_id?: { _id?: string; reference_no?: string } | string } | null
+  quote_id?: { _id: string; quote_price?: number; service_request_id?: ChatRequest | string | null } | null
+  // Request the conversation is about, set even before any quote.
+  service_request_id?: ChatRequest | null
+}
+
+export type ChatRequest = {
+  _id?: string
+  reference_no?: string
+  service_category?: { title?: string } | string | null
+  child_category?: { title?: string } | string | null
+  manual_child_category?: string | null
 }
 
 export type Message = {

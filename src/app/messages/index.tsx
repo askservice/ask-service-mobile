@@ -2,10 +2,13 @@ import { router } from 'expo-router'
 import { ActivityIndicator, FlatList, Pressable, RefreshControl, View } from 'react-native'
 
 import { useChats } from '@/api/me'
+import { Avatar } from '@/components/Avatar'
 import { SignInPrompt, TabScreen } from '@/components/TabScreen'
 import { Button, ErrorText, Text } from '@/components/ui'
-import { chatPartnerName, initials, shortTime } from '@/lib/requests'
+import { chatRequestLabel } from '@/lib/chat'
+import { chatPartner, chatPartnerName, shortTime } from '@/lib/requests'
 import type { Chat } from '@/lib/types'
+import { useLive } from '@/state/live'
 import { useSession } from '@/state/session'
 import { colors, radius } from '@/theme'
 
@@ -55,22 +58,25 @@ function ChatList() {
 }
 
 function ChatRow({ chat }: { chat: Chat }) {
+  const { online: onlineIds } = useLive()
   const name = chatPartnerName(chat)
   const unread = chat.unreadCount ?? 0
+  const partnerId = chatPartner(chat)?._id
+  const online = Boolean(partnerId && onlineIds.has(partnerId))
+  const request = chatRequestLabel(chat)
   return (
     <Pressable
       accessibilityRole="button"
       onPress={() => router.push({ pathname: '/messages/[id]', params: { id: chat._id, name } })}
       style={({ pressed }) => ({ flexDirection: 'row', alignItems: 'center', gap: 12, padding: 14, borderRadius: radius.lg, backgroundColor: pressed ? colors.primaryDim : colors.card, borderWidth: 1, borderColor: colors.borderSubtle })}
     >
-      <View style={{ width: 44, height: 44, borderRadius: 22, backgroundColor: colors.primary, alignItems: 'center', justifyContent: 'center' }}>
-        <Text weight="bold" style={{ color: colors.white }}>{initials(name)}</Text>
-      </View>
+      <Avatar name={name} size={44} online={online} />
       <View style={{ flex: 1, gap: 3 }}>
         <View style={{ flexDirection: 'row', justifyContent: 'space-between', gap: 8 }}>
           <Text weight="bold" numberOfLines={1} style={{ flex: 1, fontSize: 16 }}>{name}</Text>
           <Text style={{ fontSize: 12, color: colors.textMuted }}>{shortTime(chat.latestMessage?.createdAt ?? chat.updatedAt)}</Text>
         </View>
+        {request ? <Text numberOfLines={1} style={{ fontSize: 12, color: colors.primaryDark }}>{request}</Text> : null}
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
           <Text numberOfLines={1} weight={unread ? 'semibold' : 'regular'} style={{ flex: 1, fontSize: 14, color: unread ? colors.text : colors.textMuted }}>
             {chat.latestMessage?.content || 'Nouvelle conversation'}

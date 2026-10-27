@@ -1,16 +1,18 @@
 import MaterialIcons from '@expo/vector-icons/MaterialIcons'
 import { useQueryClient } from '@tanstack/react-query'
 import { router, useLocalSearchParams } from 'expo-router'
-import { useCallback, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { ActivityIndicator, FlatList, KeyboardAvoidingView, Pressable, TextInput, View } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 
-import { sendMessage, useMessages, useProfile } from '@/api/me'
-import { useChatSocket } from '@/api/socket'
+import { sendMessage, useChats, useMessages, useProfile } from '@/api/me'
+import { Avatar } from '@/components/Avatar'
 import { ErrorText, IconButton, Text } from '@/components/ui'
-import { initials, shortTime } from '@/lib/requests'
+import { chatRequestLabel, withMessage } from '@/lib/chat'
+import { chatPartner, shortTime } from '@/lib/requests'
 import type { Message } from '@/lib/types'
 import { KEYBOARD_BEHAVIOR } from '@/lib/keyboard'
+import { useLive } from '@/state/live'
 import { useSession } from '@/state/session'
 import { colors, fonts, radius } from '@/theme'
 
@@ -21,20 +23,23 @@ export default function Conversation() {
   const queryClient = useQueryClient()
   const profile = useProfile()
   const { data, isLoading, error } = useMessages(id)
+  const chat = useChats().data?.find((c) => c._id === id)
+  const partnerId = chat ? chatPartner(chat)?._id : undefined
+  const request = chatRequestLabel(chat)
+  const { online, joinChat, announce } = useLive()
+  const isOnline = Boolean(partnerId && online.has(partnerId))
   const [draft, setDraft] = useState('')
   const [sendError, setSendError] = useState<string | null>(null)
   const [sending, setSending] = useState(false)
 
-  // Newest first in the cache (the API order), the list is drawn upside down.
+  // Newest first in the cache (the API order), the list is drawn upside down. Messages of the
+  // other side arrive through LiveProvider.
   const add = useCallback((m: Message) => {
-    queryClient.setQueryData<{ messages?: Message[] | null }>(['me', 'messages', id], (old) => {
-      const list = old?.messages ?? []
-      return list.some((x) => x._id === m._id) ? old : { ...old, messages: [m, ...list] }
-    })
+    queryClient.setQueryData<{ messages?: Message[] | null }>(['me', 'messages', id], (old) => ({ ...old, messages: withMessage(old?.messages, m) }))
     queryClient.invalidateQueries({ queryKey: ['me', 'chats'] })
   }, [queryClient, id])
 
-  const announce = useChatSocket(id, add)
+  useEffect(() => { joinChat(id) }, [joinChat, id])
   const myId = profile.data?._id
 
   const send = async () => {
@@ -61,11 +66,20 @@ export default function Conversation() {
     <SafeAreaView edges={['top', 'bottom']} style={{ flex: 1, backgroundColor: colors.background }}>
       <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12, paddingHorizontal: 16, paddingVertical: 10, backgroundColor: colors.card, borderBottomWidth: 1, borderBottomColor: colors.borderSubtle }}>
         <IconButton icon="arrow-back" label="Retour" onPress={() => router.back()} />
-        <View style={{ width: 40, height: 40, borderRadius: 20, backgroundColor: colors.primary, alignItems: 'center', justifyContent: 'center' }}>
-          <Text weight="bold" style={{ color: colors.white, fontSize: 14 }}>{initials(name)}</Text>
+        <Avatar name={name} size={40} online={isOnline} />
+        <View style={{ flex: 1, gap: 1 }}>
+          <Text weight="bold" numberOfLines={1} style={{ fontSize: 16 }}>{name}</Text>
+          {isOnline ? <Text style={{ fontSize: 12, color: colors.successDark }}>En ligne</Text> : null}
         </View>
-        <Text weight="bold" numberOfLines={1} style={{ flex: 1, fontSize: 16 }}>{name}</Text>
       </View>
+      {request ? (
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, paddingHorizontal: 16, paddingVertical: 8, backgroundColor: colors.primaryDim }}>
+          <MaterialIcons name="description" size={16} color={colors.primaryDark} />
+          <Text numberOfLines={1} style={{ flex: 1, fontSize: 13, color: colors.primaryDark }}>
+            Demande : <Text weight="semibold" style={{ fontSize: 13, color: colors.primaryDark }}>{request}</Text>
+          </Text>
+        </View>
+      ) : null}
 
       <KeyboardAvoidingView style={{ flex: 1 }} behavior={KEYBOARD_BEHAVIOR}>
         {isLoading ? <ActivityIndicator color={colors.primary} style={{ flex: 1 }} /> : null}
