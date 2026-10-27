@@ -2,8 +2,8 @@ import MaterialIcons from '@expo/vector-icons/MaterialIcons'
 import { useQueryClient } from '@tanstack/react-query'
 import * as ExpoLocation from 'expo-location'
 import { router } from 'expo-router'
-import { useState } from 'react'
-import { ActivityIndicator, KeyboardAvoidingView, Platform, Pressable, ScrollView, View } from 'react-native'
+import { useEffect, useRef, useState, type ComponentRef } from 'react'
+import { ActivityIndicator, Keyboard, KeyboardAvoidingView, Pressable, ScrollView, View } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 
 import { updateProfile, useMeAction, useProfile } from '@/api/me'
@@ -33,6 +33,20 @@ function ProfileEditor({ profile: p }: { profile: Profile }) {
   const [tried, setTried] = useState(false)
   const [locating, setLocating] = useState(false)
   const [locateError, setLocateError] = useState<string | null>(null)
+  const scroll = useRef<ComponentRef<typeof ScrollView>>(null)
+  const inAddress = useRef(false)
+
+  // The postal address is at the bottom: once the keyboard is up, it is scrolled into view.
+  useEffect(() => {
+    const sub = Keyboard.addListener('keyboardDidShow', () => {
+      if (inAddress.current) scroll.current?.scrollToEnd()
+    })
+    return () => sub.remove()
+  }, [])
+  const addressFocus = {
+    onFocus: () => { inAddress.current = true; if (Keyboard.isVisible()) setTimeout(() => scroll.current?.scrollToEnd(), 50) },
+    onBlur: () => { inAddress.current = false },
+  }
 
   const errors = tried ? profileErrors(form) : {}
   const update = profileUpdate(p, form)
@@ -71,8 +85,9 @@ function ProfileEditor({ profile: p }: { profile: Profile }) {
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: colors.card }}>
-      <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
-        <ScrollView contentContainerStyle={{ padding: 20, gap: 18 }} keyboardShouldPersistTaps="handled">
+      {/* Android is edge-to-edge: the window no longer shrinks for the keyboard, padding on both systems. */}
+      <KeyboardAvoidingView style={{ flex: 1 }} behavior="padding">
+        <ScrollView ref={scroll} contentContainerStyle={{ padding: 20, gap: 18 }} keyboardShouldPersistTaps="handled">
           <IconButton icon="arrow-back" label="Retour" onPress={() => router.back()} />
           <Title>Mes informations</Title>
 
@@ -96,10 +111,10 @@ function ProfileEditor({ profile: p }: { profile: Profile }) {
           </View>
 
           <Text weight="bold" style={{ fontSize: 16, marginTop: 4 }}>Adresse postale <Text style={{ fontSize: 13, color: colors.textMuted }}>(facultatif)</Text></Text>
-          <Field label="Adresse" value={form.address} onChangeText={set('address')} placeholder="12 rue de la Paix" autoComplete="street-address" textContentType="streetAddressLine1" />
+          <Field label="Adresse" value={form.address} onChangeText={set('address')} placeholder="12 rue de la Paix" {...addressFocus} autoComplete="street-address" textContentType="streetAddressLine1" />
           <View style={{ flexDirection: 'row', gap: 12 }}>
-            <Field style={{ flex: 2 }} label="Code postal" value={form.postcode} onChangeText={set('postcode')} placeholder="75002" keyboardType="number-pad" maxLength={5} autoComplete="postal-code" textContentType="postalCode" error={errors.postcode} />
-            <Field style={{ flex: 3 }} label="Ville" value={form.city} onChangeText={set('city')} placeholder="Paris" textContentType="addressCity" />
+            <Field style={{ flex: 2 }} label="Code postal" value={form.postcode} onChangeText={set('postcode')} placeholder="75002" {...addressFocus} keyboardType="number-pad" maxLength={5} autoComplete="postal-code" textContentType="postalCode" error={errors.postcode} />
+            <Field style={{ flex: 3 }} label="Ville" value={form.city} onChangeText={set('city')} placeholder="Paris" {...addressFocus} textContentType="addressCity" />
           </View>
           <Pressable
             accessibilityRole="button"
