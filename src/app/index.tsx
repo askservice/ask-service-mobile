@@ -6,6 +6,7 @@ import { ActivityIndicator, Image, Keyboard, Pressable, ScrollView, TextInput, V
 import { useServiceGroups } from '@/api/requests'
 import { useMyRequests, useProfile } from '@/api/me'
 import { RequestCard } from '@/components/RequestCard'
+import { ServiceCarousel } from '@/components/ServiceCarousel'
 import { ServiceIconBadge } from '@/components/ServiceIcon'
 import { TabScreen } from '@/components/TabScreen'
 import { Button, ErrorText, Text } from '@/components/ui'
@@ -17,7 +18,7 @@ import { useSession } from '@/state/session'
 import { colors, fonts, radius } from '@/theme'
 
 // Home: "De quoi avez-vous besoin ?" and a search field that opens the list of services (grouped
-// by category, filtered while typing). Signed out: two reassurance lines; signed in: the ongoing request.
+// by category; typing filters it). Signed out: reassurance line and services carousel; signed in: the ongoing request.
 export default function Home() {
   const { reset, update } = useDraft()
   const { token } = useSession()
@@ -33,10 +34,11 @@ export default function Home() {
     .map((g) => ({ ...g, child_categories: g.child_categories.filter((s) => matchesSearch(s.title, search)) }))
     .filter((g) => g.child_categories.length > 0)
 
-  // The whole field opens the list (not only the text zone, small on Android).
+  // First touch opens the list without the keyboard (it would hide the list); once open, a touch
+  // on the field brings the keyboard to filter.
   const openList = () => {
-    setOpen(true)
-    input.current?.focus()
+    if (open) input.current?.focus()
+    else setOpen(true)
   }
 
   const close = () => {
@@ -54,7 +56,7 @@ export default function Home() {
 
   return (
     <TabScreen active="accueil">
-      <ScrollView contentContainerStyle={{ padding: 20, gap: 20 }} keyboardShouldPersistTaps="handled">
+      <ScrollView contentContainerStyle={{ padding: 20, gap: 20 }} keyboardShouldPersistTaps="handled" keyboardDismissMode="on-drag">
         <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
           {/* Client logo of the website (public/images/email/logo-client.png). */}
           <Image source={require('@/assets/images/logo-client.png')} accessibilityLabel="Ask Service" style={{ height: 44, width: 74 }} resizeMode="contain" />
@@ -82,17 +84,20 @@ export default function Home() {
             style={{ flexDirection: 'row', alignItems: 'center', gap: 10, height: 54, paddingHorizontal: 16, borderRadius: radius.md, backgroundColor: colors.card, borderWidth: open ? 2 : 1, borderColor: open ? colors.primary : colors.border }}
           >
             <MaterialIcons name="search" size={22} color={open ? colors.primary : colors.textMuted} />
-            <TextInput
-              ref={input}
-              value={search}
-              onChangeText={(t) => { setSearch(t); setOpen(true) }}
-              onFocus={() => setOpen(true)}
-              placeholder="Rechercher un service (ex. : nettoyage)"
-              placeholderTextColor={colors.textMuted}
-              accessibilityLabel="Rechercher un service"
-              returnKeyType="search"
-              style={{ flex: 1, alignSelf: 'stretch', fontFamily: fonts.regular, fontSize: 15, color: colors.text }}
-            />
+            {open ? (
+              <TextInput
+                ref={input}
+                value={search}
+                onChangeText={setSearch}
+                placeholder="Rechercher un service (ex. : nettoyage)"
+                placeholderTextColor={colors.textMuted}
+                accessibilityLabel="Rechercher un service"
+                returnKeyType="search"
+                style={{ flex: 1, alignSelf: 'stretch', fontFamily: fonts.regular, fontSize: 15, color: colors.text }}
+              />
+            ) : (
+              <Text numberOfLines={1} style={{ flex: 1, color: colors.textMuted }}>Rechercher un service (ex. : nettoyage)</Text>
+            )}
             {open ? (
               <Pressable accessibilityRole="button" accessibilityLabel="Fermer la liste" onPress={close} hitSlop={8}>
                 <MaterialIcons name="close" size={22} color={colors.textMuted} />
@@ -143,14 +148,23 @@ export default function Home() {
         ) : null}
 
         {!open && !token ? (
-          <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
-            {['Sans compte à créer', 'Gratuit, sans engagement'].map((t) => (
-              <View key={t} style={{ flexDirection: 'row', alignItems: 'center', gap: 5 }}>
-                <MaterialIcons name="check" size={16} color={colors.success} />
-                <Text style={{ fontSize: 12, color: colors.textSecondary }}>{t}</Text>
+          <>
+            <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginTop: -8 }}>
+              {['Gratuit', 'Rapide', 'Sans engagement'].map((t) => (
+                <View key={t} style={{ flexDirection: 'row', alignItems: 'center', gap: 5 }}>
+                  <MaterialIcons name="check" size={16} color={colors.success} />
+                  <Text style={{ fontSize: 13, color: colors.textSecondary }}>{t}</Text>
+                </View>
+              ))}
+            </View>
+
+            {groups ? (
+              <View style={{ gap: 10, marginTop: 8 }}>
+                <Text weight="bold" style={{ fontSize: 16 }}>Nos services</Text>
+                <ServiceCarousel services={groups.flatMap((g) => g.child_categories)} onPick={start} />
               </View>
-            ))}
-          </View>
+            ) : null}
+          </>
         ) : null}
       </ScrollView>
     </TabScreen>
