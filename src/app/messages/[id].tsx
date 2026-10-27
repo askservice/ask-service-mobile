@@ -2,7 +2,7 @@ import MaterialIcons from '@expo/vector-icons/MaterialIcons'
 import { useQueryClient } from '@tanstack/react-query'
 import { router, useLocalSearchParams } from 'expo-router'
 import { useCallback, useState } from 'react'
-import { ActivityIndicator, FlatList, KeyboardAvoidingView, Platform, Pressable, TextInput, View } from 'react-native'
+import { ActivityIndicator, FlatList, KeyboardAvoidingView, Pressable, TextInput, View } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 
 import { sendMessage, useMessages, useProfile } from '@/api/me'
@@ -10,6 +10,7 @@ import { useChatSocket } from '@/api/socket'
 import { ErrorText, IconButton, Text } from '@/components/ui'
 import { initials, shortTime } from '@/lib/requests'
 import type { Message } from '@/lib/types'
+import { KEYBOARD_BEHAVIOR } from '@/lib/keyboard'
 import { useSession } from '@/state/session'
 import { colors, fonts, radius } from '@/theme'
 
@@ -66,7 +67,7 @@ export default function Conversation() {
         <Text weight="bold" numberOfLines={1} style={{ flex: 1, fontSize: 16 }}>{name}</Text>
       </View>
 
-      <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+      <KeyboardAvoidingView style={{ flex: 1 }} behavior={KEYBOARD_BEHAVIOR}>
         {isLoading ? <ActivityIndicator color={colors.primary} style={{ flex: 1 }} /> : null}
         {error ? <View style={{ padding: 20 }}><ErrorText>Impossible de charger la conversation.</ErrorText></View> : null}
         {data ? (
