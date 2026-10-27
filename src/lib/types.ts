@@ -72,6 +72,8 @@ export type Quote = {
   price_display?: string
   service_description?: string
   available_start_date?: string
+  /** A file is joined by the provider (read with GET …/quotes/:quoteId/attachment). */
+  has_attachment?: boolean
   status: QuoteStatus
   createdAt: string
   provider_name?: string
@@ -133,7 +135,9 @@ export type Message = {
   _id: string
   sender: { _id: string; first_name?: string; last_name?: string }
   content: string
+  /** API path of the file (/api/user/messages/<id>/media), read with the session. */
   media_url?: string | null
+  media_kind?: 'image' | 'pdf' | 'file' | null
   chat: { _id: string } | string
   createdAt: string
   readBy?: (string | { _id: string })[] | null

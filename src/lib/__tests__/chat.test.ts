@@ -1,4 +1,4 @@
-import { chatRequestLabel, messageChatId, withMessage } from '../chat'
+import { attachment, chatRequestLabel, messageChatId, withMessage } from '../chat'
 import type { Chat, Message } from '../types'
 
 const chat = (over: Partial<Chat>): Chat => ({ _id: 'c', updatedAt: '2026-10-27T10:00:00Z', ...over })
@@ -41,5 +41,18 @@ describe('foreground', () => {
     expect(isForeground('unknown')).toBe(true)
     expect(isForeground(null)).toBe(true)
     expect(isForeground('background')).toBe(false)
+  })
+})
+
+describe('attachments', () => {
+  it('reads the kind given by the API', () => {
+    expect(attachment({ media_url: '/api/user/messages/m1/media', media_kind: 'image' })).toEqual({ path: '/api/user/messages/m1/media', kind: 'image', label: 'Photo' })
+    expect(attachment({ media_url: '/api/user/messages/m2/media', media_kind: 'pdf' })?.label).toBe('Document PDF')
+    expect(attachment({ media_url: '/api/user/messages/m3/media' })?.kind).toBe('file')
+  })
+  it('never uses a storage link or key', () => {
+    expect(attachment({ media_url: null })).toBeNull()
+    expect(attachment({ media_url: 'chat/1-a.jpg' })).toBeNull()
+    expect(attachment({ media_url: 'https://storage.askservice.fr/public/chat/1-a.jpg' })).toBeNull()
   })
 })
