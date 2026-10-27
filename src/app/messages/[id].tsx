@@ -10,7 +10,7 @@ import { Avatar } from '@/components/Avatar'
 import { ErrorText, IconButton, Text } from '@/components/ui'
 import { chatRequestLabel, withMessage } from '@/lib/chat'
 import { chatPartner, shortTime } from '@/lib/requests'
-import type { Message } from '@/lib/types'
+import type { Chat, Message } from '@/lib/types'
 import { KEYBOARD_BEHAVIOR } from '@/lib/keyboard'
 import { useLive } from '@/state/live'
 import { useSession } from '@/state/session'
@@ -22,7 +22,7 @@ export default function Conversation() {
   const { token } = useSession()
   const queryClient = useQueryClient()
   const profile = useProfile()
-  const { data, isLoading, error } = useMessages(id)
+  const { data, isLoading, error, dataUpdatedAt } = useMessages(id)
   const chat = useChats().data?.find((c) => c._id === id)
   const partnerId = chat ? chatPartner(chat)?._id : undefined
   const request = chatRequestLabel(chat)
@@ -39,7 +39,14 @@ export default function Conversation() {
     queryClient.invalidateQueries({ queryKey: ['me', 'chats'] })
   }, [queryClient, id])
 
-  useEffect(() => { joinChat(id) }, [joinChat, id])
+  useEffect(() => joinChat(id), [joinChat, id])
+
+  // Each load of the messages marks them read on the API (all-messages): the list shows it at once.
+  useEffect(() => {
+    if (!dataUpdatedAt) return
+    queryClient.setQueryData<Chat[]>(['me', 'chats'], (old) => old?.map((c) => (c._id === id ? { ...c, unreadCount: 0 } : c)))
+    queryClient.invalidateQueries({ queryKey: ['me', 'chats'] })
+  }, [dataUpdatedAt, queryClient, id])
   const myId = profile.data?._id
 
   const send = async () => {

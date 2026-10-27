@@ -26,13 +26,13 @@ const debug = (...args: unknown[]) => {
 
 type Live = {
   online: ReadonlySet<string>
-  /** Joins the conversation's room (typing, read receipts of the website). */
-  joinChat: (chatId: string) => void
+  /** Joins the conversation's room (typing, read receipts of the website); returns the leave function. */
+  joinChat: (chatId: string) => () => void
   /** The server relays a message saved with send-msg to the other members of the chat. */
   announce: (message: Message) => void
 }
 
-const LiveContext = createContext<Live>({ online: new Set(), joinChat: () => {}, announce: () => {} })
+const LiveContext = createContext<Live>({ online: new Set(), joinChat: () => () => {}, announce: () => {} })
 
 export function LiveProvider({ children }: { children: ReactNode }) {
   const { token } = useSession()
@@ -76,7 +76,10 @@ export function LiveProvider({ children }: { children: ReactNode }) {
       if (!chatId) return
       queryClient.setQueryData<{ messages?: Message[] | null }>(['me', 'messages', chatId], (old) =>
         old ? { ...old, messages: withMessage(old.messages, m) } : old)
-      queryClient.invalidateQueries({ queryKey: ['me', 'chats'] })
+      // Conversation on screen: loading its messages again tells the API they are read
+      // (all-messages resets the unread count), then the list is refreshed by the screen.
+      if (chatId === openChat.current) queryClient.invalidateQueries({ queryKey: ['me', 'messages', chatId] })
+      else queryClient.invalidateQueries({ queryKey: ['me', 'chats'] })
     }
     RECEIVED.forEach((e) => s.on(e, received))
 
@@ -90,6 +93,9 @@ export function LiveProvider({ children }: { children: ReactNode }) {
   const joinChat = useCallback((chatId: string) => {
     openChat.current = chatId
     socket.current?.emit('join chat', chatId)
+    return () => {
+      if (openChat.current === chatId) openChat.current = null
+    }
   }, [])
 
   const announce = useCallback((message: Message) => {
