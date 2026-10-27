@@ -45,15 +45,14 @@ describe('foreground', () => {
 })
 
 describe('attachments', () => {
-  it('recognises photos and PDF, even behind a temporary link', () => {
-    expect(attachment('https://storage.askservice.fr/public/chat/a.JPG')?.kind).toBe('image')
-    expect(attachment('https://s3.example/private/quotes/devis.pdf?X-Amz-Signature=abc')).toEqual({
-      url: 'https://s3.example/private/quotes/devis.pdf?X-Amz-Signature=abc', kind: 'pdf', label: 'Document PDF',
-    })
-    expect(attachment('https://storage.askservice.fr/public/chat/b.docx')?.label).toBe('Pièce jointe')
+  it('reads the kind given by the API', () => {
+    expect(attachment({ media_url: '/api/user/messages/m1/media', media_kind: 'image' })).toEqual({ path: '/api/user/messages/m1/media', kind: 'image', label: 'Photo' })
+    expect(attachment({ media_url: '/api/user/messages/m2/media', media_kind: 'pdf' })?.label).toBe('Document PDF')
+    expect(attachment({ media_url: '/api/user/messages/m3/media' })?.kind).toBe('file')
   })
-  it('ignores missing files and storage keys without a link', () => {
-    expect(attachment(null)).toBeNull()
-    expect(attachment('chat/a.jpg')).toBeNull()
+  it('never uses a storage link or key', () => {
+    expect(attachment({ media_url: null })).toBeNull()
+    expect(attachment({ media_url: 'chat/1-a.jpg' })).toBeNull()
+    expect(attachment({ media_url: 'https://storage.askservice.fr/public/chat/1-a.jpg' })).toBeNull()
   })
 })

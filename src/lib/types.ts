@@ -135,7 +135,9 @@ export type Message = {
   _id: string
   sender: { _id: string; first_name?: string; last_name?: string }
   content: string
+  /** API path of the file (/api/user/messages/<id>/media), read with the session. */
   media_url?: string | null
+  media_kind?: 'image' | 'pdf' | 'file' | null
   chat: { _id: string } | string
   createdAt: string
   readBy?: (string | { _id: string })[] | null

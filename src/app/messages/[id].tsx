@@ -130,13 +130,12 @@ export default function Conversation() {
 }
 
 function Bubble({ message, mine }: { message: Message; mine: boolean }) {
-  const file = attachment(message.media_url)
-  const waiting = !file && Boolean(message.media_url)
+  const file = attachment(message)
   return (
     <View style={{ alignSelf: mine ? 'flex-end' : 'flex-start', maxWidth: '80%', gap: 3 }}>
-      {file?.kind === 'image' ? <AttachmentImage url={file.url} /> : null}
-      {file && file.kind !== 'image' ? <AttachmentRow label={file.label} url={file.url} /> : null}
-      {message.content || waiting ? (
+      {file?.kind === 'image' ? <AttachmentImage path={file.path} /> : null}
+      {file && file.kind !== 'image' ? <AttachmentRow label={file.label} path={file.path} /> : null}
+      {message.content || !file ? (
         <View
           style={{
             backgroundColor: mine ? colors.primary : colors.card,
@@ -150,7 +149,7 @@ function Bubble({ message, mine }: { message: Message; mine: boolean }) {
           }}
         >
           <Text style={{ fontSize: 15, lineHeight: 21, color: mine ? colors.white : colors.text }}>
-            {message.content || 'Pièce jointe en cours de chargement…'}
+            {message.content || (message.media_url ? 'Pièce jointe' : '')}
           </Text>
         </View>
       ) : null}

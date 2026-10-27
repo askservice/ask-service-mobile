@@ -4,7 +4,7 @@ import { useState } from 'react'
 import { ActivityIndicator, Alert, Pressable, RefreshControl, ScrollView, View } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 
-import { acceptQuote, closeRequest, ignoreQuote, openChat, openQuoteAttachment, useMeAction, useMyRequest } from '@/api/me'
+import { acceptQuote, closeRequest, ignoreQuote, openApiFile, openChat, quoteAttachmentPath, useMeAction, useMyRequest } from '@/api/me'
 import { StatusBadge } from '@/components/RequestCard'
 import { AttachmentRow } from '@/components/Attachment'
 import { Button, ErrorText, Field, IconButton, OptionButton, Text } from '@/components/ui'
@@ -113,7 +113,7 @@ function QuoteCard({ quote: q, requestId, editable }: { quote: Quote; requestId:
   const openFile = async () => {
     setOpening(true)
     try {
-      await openQuoteAttachment(token, { requestId, quoteId: q._id })
+      await openApiFile(token, quoteAttachmentPath(requestId, q._id))
     } catch {
       Alert.alert('Fichier indisponible', 'Le devis joint n’a pas pu être ouvert. Réessayez dans un instant.')
     } finally {
