@@ -2,13 +2,14 @@ import MaterialIcons from '@expo/vector-icons/MaterialIcons'
 import { useQueryClient } from '@tanstack/react-query'
 import * as ExpoLocation from 'expo-location'
 import { router } from 'expo-router'
-import { useEffect, useRef, useState, type ComponentRef } from 'react'
-import { ActivityIndicator, Keyboard, KeyboardAvoidingView, Pressable, ScrollView, View } from 'react-native'
+import { useState } from 'react'
+import { ActivityIndicator, KeyboardAvoidingView, Pressable, ScrollView, View } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 
 import { updateProfile, useMeAction, useProfile } from '@/api/me'
 import { Button, ErrorText, Field, Footer, IconButton, Text, Title } from '@/components/ui'
 import { addressAt } from '@/lib/address'
+import { KEYBOARD_BEHAVIOR, useScrollToEndOnFocus } from '@/lib/keyboard'
 import { profileErrors, profileForm, profileUpdate, type ProfileForm } from '@/lib/profile'
 import type { Profile } from '@/lib/types'
 import { colors, radius } from '@/theme'
@@ -33,20 +34,8 @@ function ProfileEditor({ profile: p }: { profile: Profile }) {
   const [tried, setTried] = useState(false)
   const [locating, setLocating] = useState(false)
   const [locateError, setLocateError] = useState<string | null>(null)
-  const scroll = useRef<ComponentRef<typeof ScrollView>>(null)
-  const inAddress = useRef(false)
-
-  // The postal address is at the bottom: once the keyboard is up, it is scrolled into view.
-  useEffect(() => {
-    const sub = Keyboard.addListener('keyboardDidShow', () => {
-      if (inAddress.current) scroll.current?.scrollToEnd()
-    })
-    return () => sub.remove()
-  }, [])
-  const addressFocus = {
-    onFocus: () => { inAddress.current = true; if (Keyboard.isVisible()) setTimeout(() => scroll.current?.scrollToEnd(), 50) },
-    onBlur: () => { inAddress.current = false },
-  }
+  // The postal address is at the bottom of the form.
+  const { scroll, endField: addressFocus } = useScrollToEndOnFocus()
 
   const errors = tried ? profileErrors(form) : {}
   const update = profileUpdate(p, form)
@@ -85,8 +74,7 @@ function ProfileEditor({ profile: p }: { profile: Profile }) {
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: colors.card }}>
-      {/* Android is edge-to-edge: the window no longer shrinks for the keyboard, padding on both systems. */}
-      <KeyboardAvoidingView style={{ flex: 1 }} behavior="padding">
+      <KeyboardAvoidingView style={{ flex: 1 }} behavior={KEYBOARD_BEHAVIOR}>
         <ScrollView ref={scroll} contentContainerStyle={{ padding: 20, gap: 18 }} keyboardShouldPersistTaps="handled">
           <IconButton icon="arrow-back" label="Retour" onPress={() => router.back()} />
           <Title>Mes informations</Title>
