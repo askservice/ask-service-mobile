@@ -72,6 +72,8 @@ export type Quote = {
   price_display?: string
   service_description?: string
   available_start_date?: string
+  /** Temporary link (1 h) to the file joined by the provider. */
+  attachment_url?: string | null
   status: QuoteStatus
   createdAt: string
   provider_name?: string

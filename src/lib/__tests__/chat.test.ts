@@ -1,4 +1,4 @@
-import { chatRequestLabel, messageChatId, withMessage } from '../chat'
+import { attachment, chatRequestLabel, messageChatId, withMessage } from '../chat'
 import type { Chat, Message } from '../types'
 
 const chat = (over: Partial<Chat>): Chat => ({ _id: 'c', updatedAt: '2026-10-27T10:00:00Z', ...over })
@@ -41,5 +41,19 @@ describe('foreground', () => {
     expect(isForeground('unknown')).toBe(true)
     expect(isForeground(null)).toBe(true)
     expect(isForeground('background')).toBe(false)
+  })
+})
+
+describe('attachments', () => {
+  it('recognises photos and PDF, even behind a temporary link', () => {
+    expect(attachment('https://storage.askservice.fr/public/chat/a.JPG')?.kind).toBe('image')
+    expect(attachment('https://s3.example/private/quotes/devis.pdf?X-Amz-Signature=abc')).toEqual({
+      url: 'https://s3.example/private/quotes/devis.pdf?X-Amz-Signature=abc', kind: 'pdf', label: 'Document PDF',
+    })
+    expect(attachment('https://storage.askservice.fr/public/chat/b.docx')?.label).toBe('Pièce jointe')
+  })
+  it('ignores missing files and storage keys without a link', () => {
+    expect(attachment(null)).toBeNull()
+    expect(attachment('chat/a.jpg')).toBeNull()
   })
 })

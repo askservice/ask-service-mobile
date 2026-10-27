@@ -7,8 +7,9 @@ import { SafeAreaView } from 'react-native-safe-area-context'
 
 import { sendMessage, useChats, useMessages, useProfile } from '@/api/me'
 import { Avatar } from '@/components/Avatar'
+import { AttachmentRow, AttachmentImage } from '@/components/Attachment'
 import { ErrorText, IconButton, Text } from '@/components/ui'
-import { chatRequestLabel, withMessage } from '@/lib/chat'
+import { attachment, chatRequestLabel, withMessage } from '@/lib/chat'
 import { chatPartner, shortTime } from '@/lib/requests'
 import type { Chat, Message } from '@/lib/types'
 import { KEYBOARD_BEHAVIOR } from '@/lib/keyboard'
@@ -129,24 +130,30 @@ export default function Conversation() {
 }
 
 function Bubble({ message, mine }: { message: Message; mine: boolean }) {
+  const file = attachment(message.media_url)
+  const waiting = !file && Boolean(message.media_url)
   return (
     <View style={{ alignSelf: mine ? 'flex-end' : 'flex-start', maxWidth: '80%', gap: 3 }}>
-      <View
-        style={{
-          backgroundColor: mine ? colors.primary : colors.card,
-          borderWidth: mine ? 0 : 1,
-          borderColor: colors.borderSubtle,
-          borderRadius: radius.xl,
-          borderBottomRightRadius: mine ? 6 : radius.xl,
-          borderBottomLeftRadius: mine ? radius.xl : 6,
-          paddingHorizontal: 14,
-          paddingVertical: 10,
-        }}
-      >
-        <Text style={{ fontSize: 15, lineHeight: 21, color: mine ? colors.white : colors.text }}>
-          {message.content || (message.media_url ? 'Pièce jointe (à ouvrir sur askservice.fr)' : '')}
-        </Text>
-      </View>
+      {file?.kind === 'image' ? <AttachmentImage url={file.url} /> : null}
+      {file && file.kind !== 'image' ? <AttachmentRow label={file.label} url={file.url} /> : null}
+      {message.content || waiting ? (
+        <View
+          style={{
+            backgroundColor: mine ? colors.primary : colors.card,
+            borderWidth: mine ? 0 : 1,
+            borderColor: colors.borderSubtle,
+            borderRadius: radius.xl,
+            borderBottomRightRadius: mine ? 6 : radius.xl,
+            borderBottomLeftRadius: mine ? radius.xl : 6,
+            paddingHorizontal: 14,
+            paddingVertical: 10,
+          }}
+        >
+          <Text style={{ fontSize: 15, lineHeight: 21, color: mine ? colors.white : colors.text }}>
+            {message.content || 'Pièce jointe en cours de chargement…'}
+          </Text>
+        </View>
+      ) : null}
       <Text style={{ fontSize: 11, color: colors.textMuted, alignSelf: mine ? 'flex-end' : 'flex-start' }}>{shortTime(message.createdAt)}</Text>
     </View>
   )
