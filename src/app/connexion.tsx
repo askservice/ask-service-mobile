@@ -93,7 +93,6 @@ export default function SignIn() {
                 autoCapitalize="none"
                 autoComplete="email"
                 textContentType="emailAddress"
-                autoFocus={!params.email}
                 onSubmitEditing={askCode}
               />
               <GoogleButton busy={busy} onBusy={setBusy} onError={setError} />
