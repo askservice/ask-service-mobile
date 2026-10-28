@@ -1,26 +1,28 @@
-import { router } from 'expo-router'
+import { router, useLocalSearchParams } from 'expo-router'
 import { useState } from 'react'
-import { Image, KeyboardAvoidingView, Pressable, ScrollView, View } from 'react-native'
+import { KeyboardAvoidingView, ScrollView, View } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 
 import { sendLoginCode, verifyLoginCode } from '@/api/requests'
 import { CODE_LENGTH, CodeInput } from '@/components/CodeInput'
+import { GoogleButton, SwitchAuthLink } from '@/components/GoogleButton'
 import { ResendCode } from '@/components/ResendCode'
 import { Button, ErrorText, Field, Footer, IconButton, Text, Title } from '@/components/ui'
 import { loginRefusal } from '@/lib/auth'
 import { isValidEmail } from '@/lib/contact'
-import { GoogleSignInError, googleSignInAvailable, signInWithGoogle } from '@/lib/googleSignIn'
 import { KEYBOARD_BEHAVIOR } from '@/lib/keyboard'
 import { useSession } from '@/state/session'
-import { colors, radius } from '@/theme'
+import { colors } from '@/theme'
 
 const NETWORK_ERROR = 'Connexion impossible. Vérifiez votre réseau et réessayez.'
 const VENDOR_ACCOUNT = 'Cette adresse est celle d’un compte prestataire : connectez-vous sur le site, dans l’espace prestataire.'
 
 // Sign-in without password: the client's e-mail, then the 6-digit code sent to it.
+// `email`: typed on the sign-up screen when the address already has an account.
 export default function SignIn() {
   const { signIn } = useSession()
-  const [email, setEmail] = useState('')
+  const params = useLocalSearchParams<{ email?: string }>()
+  const [email, setEmail] = useState(params.email ?? '')
   const [step, setStep] = useState<'email' | 'code'>('email')
   const [code, setCode] = useState('')
   const [error, setError] = useState<string | null>(null)
@@ -44,26 +46,6 @@ export default function SignIn() {
     setBusy(false)
     if (failure) setError(failure)
     else setStep('code')
-  }
-
-  // Same as the website: Google account, client accounts only (the API refuses a vendor).
-  const google = async () => {
-    setError(null)
-    setBusy(true)
-    try {
-      const res = await signInWithGoogle()
-      if (!res) return
-      const token = res.body.data?.token
-      if (res.status >= 400 || !token) { setError(res.body.message || 'La connexion avec Google n’a pas abouti. Veuillez réessayer.'); return }
-      const refusal = loginRefusal(res.body.data?.role)
-      if (refusal) { setError(refusal); return }
-      await signIn(token)
-      router.replace('/demandes')
-    } catch (err) {
-      setError(err instanceof GoogleSignInError ? err.message : NETWORK_ERROR)
-    } finally {
-      setBusy(false)
-    }
   }
 
   const verify = async (value = code) => {
@@ -111,39 +93,11 @@ export default function SignIn() {
                 autoCapitalize="none"
                 autoComplete="email"
                 textContentType="emailAddress"
-                autoFocus
+                autoFocus={!params.email}
                 onSubmitEditing={askCode}
               />
-              {googleSignInAvailable ? (
-                <>
-                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
-                    <View style={{ flex: 1, height: 1, backgroundColor: colors.border }} />
-                    <Text style={{ fontSize: 13, color: colors.textMuted }}>ou</Text>
-                    <View style={{ flex: 1, height: 1, backgroundColor: colors.border }} />
-                  </View>
-                  <Pressable
-                    accessibilityRole="button"
-                    accessibilityState={{ disabled: busy }}
-                    disabled={busy}
-                    onPress={google}
-                    style={({ pressed }) => ({
-                      height: 54,
-                      borderRadius: radius.lg,
-                      borderWidth: 1,
-                      borderColor: colors.border,
-                      backgroundColor: colors.card,
-                      flexDirection: 'row',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      gap: 10,
-                      opacity: pressed ? 0.85 : 1,
-                    })}
-                  >
-                    <Image source={require('@/assets/images/google-g.png')} accessibilityIgnoresInvertColors style={{ width: 20, height: 20 }} />
-                    <Text weight="bold" style={{ fontSize: 17 }}>Continuer avec Google</Text>
-                  </Pressable>
-                </>
-              ) : null}
+              <GoogleButton busy={busy} onBusy={setBusy} onError={setError} />
+              <SwitchAuthLink question="Pas encore de compte ?" action="Créer un compte" onPress={() => router.replace('/inscription')} />
             </>
           ) : (
             <>
