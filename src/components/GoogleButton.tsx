@@ -1,5 +1,5 @@
 import { router } from 'expo-router'
-import { Image, Pressable, View } from 'react-native'
+import { Image, Linking, Pressable, View } from 'react-native'
 
 import { loginRefusal } from '@/lib/auth'
 import { GoogleSignInError, googleSignInAvailable, signInWithGoogle } from '@/lib/googleSignIn'
@@ -8,6 +8,7 @@ import { colors, radius } from '@/theme'
 
 import { Text } from './ui'
 
+const SITE = 'https://askservice.fr'
 const NETWORK_ERROR = 'Connexion impossible. Vérifiez votre réseau et réessayez.'
 
 /**
@@ -66,6 +67,14 @@ export function GoogleButton({ busy, onBusy, onError }: { busy: boolean; onBusy:
         <Image source={require('@/assets/images/google-g.png')} accessibilityIgnoresInvertColors style={{ width: 20, height: 20 }} />
         <Text weight="bold" style={{ fontSize: 17 }}>Continuer avec Google</Text>
       </Pressable>
+      {/* Google can create the account without the terms checkbox, like on the website. */}
+      <Text style={{ fontSize: 12, lineHeight: 18, color: colors.textMuted, textAlign: 'center', marginTop: -8 }}>
+        {'En continuant avec Google, vous acceptez les '}
+        <Text weight="semibold" style={{ fontSize: 12, color: colors.primary }} onPress={() => Linking.openURL(`${SITE}/terms`)}>Conditions d’utilisation</Text>
+        {' et la '}
+        <Text weight="semibold" style={{ fontSize: 12, color: colors.primary }} onPress={() => Linking.openURL(`${SITE}/privacy`)}>Politique de confidentialité</Text>
+        .
+      </Text>
     </>
   )
 }
