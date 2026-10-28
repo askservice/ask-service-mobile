@@ -149,6 +149,8 @@ export default function SignUp() {
                 </Pressable>
                 {errors.termsAccepted ? <Text style={{ fontSize: 13, color: colors.danger }}>{errors.termsAccepted}</Text> : null}
               </View>
+              {/* Under the terms, like the website. */}
+              <Button label="Continuer" trailingIcon="arrow-forward" onPress={register} loading={busy} />
               {error ? <ErrorText>{error}</ErrorText> : null}
               {accountExists ? <Button label="Se connecter" variant="outline" onPress={toSignIn} /> : null}
               <GoogleButton busy={busy} onBusy={setBusy} onError={setError} />
@@ -170,11 +172,11 @@ export default function SignUp() {
             </>
           )}
         </ScrollView>
-        <Footer>
-          {step === 'form'
-            ? <Button label="Créer mon compte" onPress={register} loading={busy} />
-            : <Button label="Valider" onPress={() => verify()} loading={busy} />}
-        </Footer>
+        {step === 'code' ? (
+          <Footer>
+            <Button label="Valider" onPress={() => verify()} loading={busy} />
+          </Footer>
+        ) : null}
       </KeyboardAvoidingView>
     </SafeAreaView>
   )

@@ -30,12 +30,14 @@ export function Title({ children, style }: { children: ReactNode; style?: StyleP
   )
 }
 
-export function Button({ label, onPress, variant = 'primary', disabled, loading, style }: {
+export function Button({ label, onPress, variant = 'primary', disabled, loading, trailingIcon, style }: {
   label: string
   onPress: () => void
   variant?: 'primary' | 'outline'
   disabled?: boolean
   loading?: boolean
+  /** Icon after the label, e.g. 'arrow-forward' like the website's "Continuer →". */
+  trailingIcon?: ComponentProps<typeof MaterialIcons>['name']
   style?: StyleProp<ViewStyle>
 }) {
   const primary = variant === 'primary'
@@ -49,6 +51,8 @@ export function Button({ label, onPress, variant = 'primary', disabled, loading,
         {
           height: 54,
           borderRadius: radius.lg,
+          flexDirection: 'row',
+          gap: 8,
           alignItems: 'center',
           justifyContent: 'center',
           backgroundColor: primary ? colors.primary : colors.card,
@@ -62,7 +66,10 @@ export function Button({ label, onPress, variant = 'primary', disabled, loading,
       {loading ? (
         <ActivityIndicator color={primary ? colors.white : colors.primary} />
       ) : (
-        <Text weight="bold" style={{ fontSize: 17, color: primary ? colors.white : colors.text }}>{label}</Text>
+        <>
+          <Text weight="bold" style={{ fontSize: 17, color: primary ? colors.white : colors.text }}>{label}</Text>
+          {trailingIcon ? <MaterialIcons name={trailingIcon} size={20} color={primary ? colors.white : colors.text} /> : null}
+        </>
       )}
     </Pressable>
   )
