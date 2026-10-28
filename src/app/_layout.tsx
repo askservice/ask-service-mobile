@@ -67,6 +67,7 @@ export default function RootLayout() {
               <Stack.Screen name="compte/index" options={{ animation: 'none' }} />
               <Stack.Screen name="demande" options={{ presentation: 'fullScreenModal', gestureEnabled: false }} />
               <Stack.Screen name="connexion" options={{ presentation: 'modal' }} />
+              <Stack.Screen name="inscription" options={{ presentation: 'modal' }} />
             </Stack>
           </ActivityTracker>
         </DraftProvider>

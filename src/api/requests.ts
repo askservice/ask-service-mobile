@@ -41,6 +41,9 @@ export const verifyPhoneCode = (phone: string, otp: string) =>
 export const verifyEmailCode = (email: string, otp: string) =>
   api<Session>('/user/verify-email', { method: 'POST', body: { email, otp } })
 
+/** Client sign-up from the app (no request): a code is sent to the e-mail, then /user/verify-email. */
+export const signup = (body: unknown) => api('/user/signup', { method: 'POST', body })
+
 /** Client sign-in: code sent to the e-mail (same answer whether or not the address has an account). */
 export const sendLoginCode = (email: string) => api('/user/login-code/send', { method: 'POST', body: { email } })
 
