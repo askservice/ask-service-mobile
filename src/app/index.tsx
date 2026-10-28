@@ -5,6 +5,7 @@ import { ActivityIndicator, Image, Keyboard, Pressable, ScrollView, TextInput, V
 
 import { useServiceGroups } from '@/api/requests'
 import { useMyRequests, useProfile } from '@/api/me'
+import { AuthMenu } from '@/components/AuthMenu'
 import { RequestCard } from '@/components/RequestCard'
 import { ServiceCarousel } from '@/components/ServiceCarousel'
 import { ServiceIconBadge } from '@/components/ServiceIcon'
@@ -60,15 +61,7 @@ export default function Home() {
         <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
           {/* Client logo of the website (public/images/email/logo-client.png). */}
           <Image source={require('@/assets/images/logo-client.png')} accessibilityLabel="Ask Service" style={{ height: 44, width: 74 }} resizeMode="contain" />
-          {token ? null : (
-            <Pressable
-              accessibilityRole="button"
-              onPress={() => router.push('/connexion')}
-              style={{ height: 40, paddingHorizontal: 14, borderRadius: 20, borderWidth: 1, borderColor: colors.border, backgroundColor: colors.card, justifyContent: 'center' }}
-            >
-              <Text weight="semibold" style={{ fontSize: 14 }}>Se connecter</Text>
-            </Pressable>
-          )}
+          {token ? null : <AuthMenu />}
         </View>
 
         <View style={{ gap: 6, marginTop: 16 }}>
