@@ -2,14 +2,14 @@ import MaterialIcons from '@expo/vector-icons/MaterialIcons'
 import { useQuery } from '@tanstack/react-query'
 import * as ExpoLocation from 'expo-location'
 import { router } from 'expo-router'
-import { useEffect, useRef, useState, type ComponentRef } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { ActivityIndicator, Keyboard, KeyboardAvoidingView, Pressable, ScrollView, TextInput, View } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 
 import { useProfile } from '@/api/me'
-import { Button, ErrorText, Footer, StepHeader, Text, Title } from '@/components/ui'
+import { Button, ErrorText, fieldBorder, Footer, StepHeader, Text, Title } from '@/components/ui'
 import { addressAt, profileAddressQuery, searchAddress, type AddressSuggestion } from '@/lib/address'
-import { KEYBOARD_BEHAVIOR } from '@/lib/keyboard'
+import { KEYBOARD_BEHAVIOR, useRevealField } from '@/lib/keyboard'
 import { useDraft } from '@/state/draft'
 import { goToQuestionStep, useFlowSteps } from '@/state/flow'
 import { colors, fonts, radius } from '@/theme'
@@ -29,8 +29,6 @@ export default function AddressStep() {
   // Address already chosen (back from the next step): only that one is shown, the field comes back with « Modifier ».
   const [choosing, setChoosing] = useState(!draft.location)
   const advance = useRef(false)
-  const scroll = useRef<ComponentRef<typeof ScrollView>>(null)
-  const fieldY = useRef(0)
   const accountAddress = useAccountAddress()
 
   // Suggestions 300 ms after the last key, previous search cancelled.
@@ -48,14 +46,7 @@ export default function AddressStep() {
   }, [query, draft.location])
 
   // Field moved to the top while typing, so the suggestions stay above the keyboard.
-  const revealField = () => scroll.current?.scrollTo({ y: Math.max(0, fieldY.current - 12) })
-  useEffect(() => {
-    const sub = Keyboard.addListener('keyboardDidShow', () => { if (focused) revealField() })
-    return () => sub.remove()
-  }, [focused])
-  useEffect(() => {
-    if (focused && suggestions.length > 0) revealField()
-  }, [focused, suggestions.length])
+  const { scroll, onFieldLayout, reveal } = useRevealField(focused, suggestions.length)
 
   // An address just picked goes on after a short pause, like the questions (once the questions are known).
   useEffect(() => {
@@ -97,8 +88,6 @@ export default function AddressStep() {
     if (!draft.location?.pincode) { setFieldError('Choisissez une adresse dans la liste.'); return }
     goToQuestionStep(0, steps.length)
   }
-
-  const fieldBorder = fieldError ? colors.danger : focused ? colors.primary : colors.border
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: colors.card }}>
@@ -170,14 +159,14 @@ export default function AddressStep() {
                 <View style={{ flex: 1, height: 1, backgroundColor: colors.borderSubtle }} />
               </View>
 
-              <View style={{ gap: 8 }} onLayout={(e) => { fieldY.current = e.nativeEvent.layout.y }}>
+              <View style={{ gap: 8 }} onLayout={onFieldLayout}>
                 <Text weight="semibold" style={{ fontSize: 13 }}>Adresse, ville ou code postal</Text>
-                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, height: 52, paddingHorizontal: 14, borderRadius: radius.md, borderWidth: focused || fieldError ? 2 : 1, borderColor: fieldBorder, backgroundColor: colors.card }}>
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, height: 52, paddingHorizontal: 14, borderRadius: radius.md, ...fieldBorder(focused, Boolean(fieldError)), backgroundColor: colors.card }}>
                   <MaterialIcons name="location-on" size={22} color={focused ? colors.primary : colors.textMuted} />
                   <TextInput
                     value={query}
                     onChangeText={(t) => { setQuery(t); setFieldError(null); if (draft.location) update({ location: null }) }}
-                    onFocus={() => { setFocused(true); if (Keyboard.isVisible()) revealField() }}
+                    onFocus={() => { setFocused(true); if (Keyboard.isVisible()) reveal() }}
                     onBlur={() => setFocused(false)}
                     placeholder="Ex. : 12 rue Jeanne d'Arc, Orléans"
                     placeholderTextColor={colors.textMuted}

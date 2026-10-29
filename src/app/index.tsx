@@ -10,7 +10,8 @@ import { RequestCard } from '@/components/RequestCard'
 import { ServiceCarousel } from '@/components/ServiceCarousel'
 import { ServiceIconBadge } from '@/components/ServiceIcon'
 import { TabScreen } from '@/components/TabScreen'
-import { Button, ErrorText, Text } from '@/components/ui'
+import { Button, ErrorText, fieldBorder, Text } from '@/components/ui'
+import { useRevealField } from '@/lib/keyboard'
 import { isOngoing } from '@/lib/requests'
 import { matchesSearch } from '@/lib/search'
 import type { Service } from '@/lib/types'
@@ -34,6 +35,8 @@ export default function Home() {
   const shownGroups = (groups ?? [])
     .map((g) => ({ ...g, child_categories: g.child_categories.filter((s) => matchesSearch(s.title, search)) }))
     .filter((g) => g.child_categories.length > 0)
+  // List open: field moved to the top, so the list stays above the keyboard.
+  const { scroll, onFieldLayout } = useRevealField(open, shownGroups.length)
 
   // First touch opens the list without the keyboard (it would hide the list); once open, a touch
   // on the field brings the keyboard to filter.
@@ -57,7 +60,7 @@ export default function Home() {
 
   return (
     <TabScreen active="accueil">
-      <ScrollView contentContainerStyle={{ padding: 20, gap: 20 }} keyboardShouldPersistTaps="handled" keyboardDismissMode="on-drag">
+      <ScrollView ref={scroll} contentContainerStyle={{ padding: 20, gap: 20 }} keyboardShouldPersistTaps="handled" keyboardDismissMode="on-drag">
         <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
           {/* Client logo of the website (public/images/email/logo-client.png). */}
           <Image source={require('@/assets/images/logo-client.png')} accessibilityLabel="Ask Service" style={{ height: 44, width: 74 }} resizeMode="contain" />
@@ -70,11 +73,11 @@ export default function Home() {
           <Text style={{ color: colors.textSecondary, lineHeight: 21 }}>Décrivez votre besoin, jusqu’à 3 professionnels vérifiés vous répondent.</Text>
         </View>
 
-        <View style={{ gap: 8 }}>
+        <View style={{ gap: 8 }} onLayout={onFieldLayout}>
           <Pressable
             onPress={openList}
             accessibilityLabel="Ouvrir la liste des services"
-            style={{ flexDirection: 'row', alignItems: 'center', gap: 10, height: 54, paddingHorizontal: 16, borderRadius: radius.md, backgroundColor: colors.card, borderWidth: open ? 2 : 1, borderColor: open ? colors.primary : colors.border }}
+            style={{ flexDirection: 'row', alignItems: 'center', gap: 10, height: 54, paddingHorizontal: 16, borderRadius: radius.md, backgroundColor: colors.card, ...fieldBorder(open) }}
           >
             <MaterialIcons name="search" size={22} color={open ? colors.primary : colors.textMuted} />
             {open ? (
