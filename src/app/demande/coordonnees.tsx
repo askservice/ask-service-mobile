@@ -1,11 +1,12 @@
 import MaterialIcons from '@expo/vector-icons/MaterialIcons'
 import { router } from 'expo-router'
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { KeyboardAvoidingView, ScrollView, View } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 
+import { useProfile } from '@/api/me'
 import { Button, Field, Footer, StepHeader, Text, Title } from '@/components/ui'
-import { contactErrors, type ContactErrors } from '@/lib/contact'
+import { contactErrors, withProfileContact, type ContactErrors } from '@/lib/contact'
 import { KEYBOARD_BEHAVIOR, useScrollToEndOnFocus } from '@/lib/keyboard'
 import type { Contact } from '@/lib/types'
 import { useDraft } from '@/state/draft'
@@ -19,6 +20,14 @@ export default function ContactStep() {
   const [errors, setErrors] = useState<ContactErrors>({})
   // « Précisions » is the last field.
   const { scroll, endField } = useScrollToEndOnFocus()
+  // Signed-in client: empty fields filled from the account once (a field emptied afterwards stays empty).
+  const { data: profile } = useProfile()
+  const filled = useRef(false)
+  useEffect(() => {
+    if (!profile || filled.current) return
+    filled.current = true
+    update({ contact: withProfileContact(draft.contact, profile) })
+  }, [profile, draft.contact, update])
 
   const c = draft.contact
   const set = (key: keyof Contact) => (value: string) => update({ contact: { ...c, [key]: value } })
