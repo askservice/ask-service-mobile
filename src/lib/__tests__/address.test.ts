@@ -1,5 +1,16 @@
-import { searchAddress, toSuggestion } from '../address'
+import { profileAddressQuery, searchAddress, toSuggestion } from '../address'
 import { isoDay, longDate, monthGrid } from '../dates'
+
+describe('address saved in the account', () => {
+  it('is searched with the street, postal code and town', () => {
+    expect(profileAddressQuery({ address: ' 12 rue de la Paix ', postal_code: '75002', city: 'Paris' })).toBe('12 rue de la Paix 75002 Paris')
+    expect(profileAddressQuery({ address: '', postal_code: '45000', city: 'Orléans' })).toBe('45000 Orléans')
+  })
+  it('is ignored when the account has none', () => {
+    expect(profileAddressQuery({ address: null, postal_code: null, city: null })).toBeNull()
+    expect(profileAddressQuery({ address: '', postal_code: '', city: 'Ab' })).toBeNull()
+  })
+})
 
 describe('address suggestions (Base Adresse Nationale)', () => {
   it('maps a street address to the request location', () => {
