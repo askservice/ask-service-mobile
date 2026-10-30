@@ -21,8 +21,9 @@ import { useDraft } from '@/state/draft'
 import { useSession } from '@/state/session'
 import { colors, fonts, radius } from '@/theme'
 
-// Home: "De quoi avez-vous besoin ?", a search field that opens the list of services (grouped
-// by category; typing filters it) and the popular services as tiles, like the website.
+// Home: "De quoi avez-vous besoin ?" and the popular services as tiles, like the website;
+// « Autre service : rechercher » opens the search field and the list of services (grouped by
+// category; typing filters it).
 // Signed out: reassurance line, how it works and reviews; signed in: the ongoing request.
 export default function Home() {
   const { reset, update } = useDraft()
@@ -41,8 +42,8 @@ export default function Home() {
   // List open: field moved to the top, so the list stays above the keyboard.
   const { scroll, onFieldLayout } = useRevealField(open, shownGroups.length)
 
-  // First touch opens the list without the keyboard (it would hide the list); once open, a touch
-  // on the field brings the keyboard to filter.
+  // « Autre service » shows the field and the list without the keyboard (it would hide the list);
+  // a touch on the field then brings the keyboard to filter.
   const openList = () => {
     if (open) input.current?.focus()
     else setOpen(true)
@@ -77,13 +78,14 @@ export default function Home() {
         </View>
 
         <View style={{ gap: 8 }} onLayout={onFieldLayout}>
-          <Pressable
-            onPress={openList}
-            accessibilityLabel="Ouvrir la liste des services"
-            style={{ flexDirection: 'row', alignItems: 'center', gap: 10, height: 54, paddingHorizontal: 16, borderRadius: radius.md, backgroundColor: colors.card, ...fieldBorder(open) }}
-          >
-            <MaterialIcons name="search" size={22} color={open ? colors.primary : colors.textMuted} />
-            {open ? (
+          {/* Search only once « Autre service : rechercher » is touched: the tiles come first. */}
+          {open ? (
+            <Pressable
+              onPress={openList}
+              accessibilityLabel="Rechercher un service"
+              style={{ flexDirection: 'row', alignItems: 'center', gap: 10, height: 54, paddingHorizontal: 16, borderRadius: radius.md, backgroundColor: colors.card, ...fieldBorder(true) }}
+            >
+              <MaterialIcons name="search" size={22} color={colors.primary} />
               <TextInput
                 ref={input}
                 value={search}
@@ -94,17 +96,11 @@ export default function Home() {
                 returnKeyType="search"
                 style={{ flex: 1, alignSelf: 'stretch', fontFamily: fonts.regular, fontSize: 15, color: colors.text }}
               />
-            ) : (
-              <Text numberOfLines={1} style={{ flex: 1, color: colors.textMuted }}>Rechercher un service (ex. : nettoyage)</Text>
-            )}
-            {open ? (
               <Pressable accessibilityRole="button" accessibilityLabel="Fermer la liste" onPress={close} hitSlop={8}>
                 <MaterialIcons name="close" size={22} color={colors.textMuted} />
               </Pressable>
-            ) : (
-              <MaterialIcons name="expand-more" size={24} color={colors.textMuted} />
-            )}
-          </Pressable>
+            </Pressable>
+          ) : null}
 
           {open ? (
             <View style={{ padding: 6, borderRadius: radius.lg, borderWidth: 1, borderColor: colors.border, backgroundColor: colors.card }}>
