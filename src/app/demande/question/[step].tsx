@@ -1,6 +1,6 @@
 import MaterialIcons from '@expo/vector-icons/MaterialIcons'
 import { router, useLocalSearchParams } from 'expo-router'
-import { useRef, useState } from 'react'
+import { useRef, useState, type ComponentRef } from 'react'
 import { ActivityIndicator, Keyboard, KeyboardAvoidingView, Pressable, ScrollView, TextInput, View } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 
@@ -25,11 +25,11 @@ export default function QuestionStep() {
   const { steps, total, isLoading, error, refetch } = useFlowSteps()
   const [tried, setTried] = useState(false)
   const leaving = useRef(false)
-  // Choice field being used, and where each question starts in the scrolled content.
-  const [typingKey, setTypingKey] = useState<string | null>(null)
+  // Choice list open, and where each question starts in the scrolled content.
+  const [openKey, setOpenKey] = useState<string | null>(null)
   const [shownCount, setShownCount] = useState(0)
   const blockY = useRef<Record<string, number>>({})
-  const { scroll, reveal, fieldY } = useRevealField(typingKey !== null, shownCount)
+  const { scroll, fieldY } = useRevealField(openKey !== null, shownCount)
 
   const questions = steps[index] ?? []
   const answers = draft.answers
@@ -65,7 +65,7 @@ export default function QuestionStep() {
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: colors.card }}>
       <KeyboardAvoidingView style={{ flex: 1 }} behavior={KEYBOARD_BEHAVIOR}>
-        <ScrollView ref={scroll} contentContainerStyle={{ padding: 20, gap: 22 }} keyboardShouldPersistTaps="handled">
+        <ScrollView ref={scroll} contentContainerStyle={{ padding: 20, gap: 22 }} keyboardShouldPersistTaps="handled" keyboardDismissMode="on-drag">
           <StepHeader step={index + 3} total={total} onBack={() => router.back()} />
 
           {draft.service ? (
@@ -87,12 +87,11 @@ export default function QuestionStep() {
               onAnswer={(value) => setAnswer(q.key, value)}
               onPick={(value) => answerAndGo(q.key, value)}
               onLayout={(y) => { blockY.current[q.key] = y }}
-              onTyping={(typing, count) => {
-                if (!typing) { setTypingKey((k) => (k === q.key ? null : k)); return }
+              onTyping={(open, count) => {
+                if (!open) { setOpenKey((k) => (k === q.key ? null : k)); return }
                 fieldY.current = blockY.current[q.key] ?? 0
-                setTypingKey(q.key)
+                setOpenKey(q.key)
                 setShownCount(count)
-                if (Keyboard.isVisible()) reveal()
               }}
             />
           ))}
@@ -119,7 +118,7 @@ function QuestionBlock({ question: q, answer, showHint, error, onAnswer, onPick,
   onAnswer: (value: Answer) => void
   onPick: (value: string) => void
   onLayout: (y: number) => void
-  onTyping: (typing: boolean, shownCount: number) => void
+  onTyping: (open: boolean, shownCount: number) => void
 }) {
   const options = q.options ?? []
   return (
@@ -181,8 +180,8 @@ function QuestionBlock({ question: q, answer, showHint, error, onAnswer, onPick,
 }
 
 /**
- * Single choice, like the address: a field whose answers (set in the admin) unfold under it once
- * touched, filtered while typing. Once answered, only the answer is shown with « Modifier ».
+ * Single choice, like the home search bar (no magnifier): a field whose answers (set in the admin)
+ * unfold under it once touched, filtered while typing. Once answered, only the answer is shown with « Modifier ».
  */
 function ChoiceField({ label, options, answer, error, onPick, onTyping }: {
   label: string
@@ -190,19 +189,32 @@ function ChoiceField({ label, options, answer, error, onPick, onTyping }: {
   answer: string | undefined
   error: boolean
   onPick: (value: string) => void
-  onTyping: (typing: boolean, shownCount: number) => void
+  onTyping: (open: boolean, shownCount: number) => void
 }) {
   const [query, setQuery] = useState('')
-  const [focused, setFocused] = useState(false)
-  const [choosing, setChoosing] = useState(!isAnswered(answer))
-  // List closed until the field is touched, then left open until an answer is chosen (like the address suggestions).
   const [open, setOpen] = useState(false)
+  const [choosing, setChoosing] = useState(!isAnswered(answer))
+  const input = useRef<ComponentRef<typeof TextInput>>(null)
   const shown = matchingOptions(options, query)
   const chosen = options.find((o) => o.value === answer)
 
-  const pick = (value: string) => {
-    setQuery('')
+  // First touch opens the list without the keyboard (it would hide the list); once open, a touch
+  // on the field brings the keyboard to filter.
+  const openList = () => {
+    if (open) { input.current?.focus(); return }
+    setOpen(true)
+    onTyping(true, shown.length)
+  }
+
+  const close = () => {
     setOpen(false)
+    setQuery('')
+    Keyboard.dismiss()
+    onTyping(false, 0)
+  }
+
+  const pick = (value: string) => {
+    close()
     setChoosing(false)
     onPick(value)
   }
@@ -228,24 +240,33 @@ function ChoiceField({ label, options, answer, error, onPick, onTyping }: {
 
   return (
     <View style={{ gap: 8 }}>
-      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, height: 52, paddingHorizontal: 14, borderRadius: radius.md, ...fieldBorder(focused, error), backgroundColor: colors.card }}>
-        <TextInput
-          value={query}
-          onChangeText={(t) => { setQuery(t); setOpen(true); onTyping(true, matchingOptions(options, t).length) }}
-          onFocus={() => { setFocused(true); setOpen(true); onTyping(true, shown.length) }}
-          onBlur={() => { setFocused(false); onTyping(false, 0) }}
-          placeholder="Rechercher une réponse"
-          placeholderTextColor={colors.textMuted}
-          accessibilityLabel={label}
-          autoCorrect={false}
-          style={{ flex: 1, alignSelf: 'stretch', fontFamily: fonts.regular, fontSize: 16, color: colors.text }}
-        />
-        {query ? (
-          <Pressable accessibilityLabel="Effacer" onPress={() => setQuery('')} hitSlop={8}>
-            <MaterialIcons name="cancel" size={22} color={colors.textMuted} />
+      <Pressable
+        onPress={openList}
+        accessibilityLabel={`Ouvrir la liste des réponses : ${label}`}
+        style={{ flexDirection: 'row', alignItems: 'center', gap: 10, height: 54, paddingHorizontal: 16, borderRadius: radius.md, backgroundColor: colors.card, ...fieldBorder(open, error) }}
+      >
+        {open ? (
+          <TextInput
+            ref={input}
+            value={query}
+            onChangeText={(t) => { setQuery(t); onTyping(true, matchingOptions(options, t).length) }}
+            placeholder="Rechercher une réponse"
+            placeholderTextColor={colors.textMuted}
+            accessibilityLabel={label}
+            autoCorrect={false}
+            style={{ flex: 1, alignSelf: 'stretch', fontFamily: fonts.regular, fontSize: 15, color: colors.text }}
+          />
+        ) : (
+          <Text numberOfLines={1} style={{ flex: 1, color: colors.textMuted }}>Rechercher une réponse</Text>
+        )}
+        {open ? (
+          <Pressable accessibilityRole="button" accessibilityLabel="Fermer la liste" onPress={close} hitSlop={8}>
+            <MaterialIcons name="close" size={22} color={colors.textMuted} />
           </Pressable>
-        ) : null}
-      </View>
+        ) : (
+          <MaterialIcons name="expand-more" size={24} color={colors.textMuted} />
+        )}
+      </Pressable>
       {error ? <ErrorText>Choisissez une réponse dans la liste.</ErrorText> : null}
 
       {open ? (
@@ -258,10 +279,10 @@ function ChoiceField({ label, options, answer, error, onPick, onTyping }: {
                 accessibilityRole="button"
                 accessibilityState={{ selected }}
                 onPress={() => pick(o.value)}
-                style={({ pressed }) => ({ flexDirection: 'row', alignItems: 'center', gap: 12, minHeight: 48, paddingHorizontal: 10, paddingVertical: 10, borderRadius: radius.sm, backgroundColor: pressed || selected ? colors.primaryDim : 'transparent' })}
+                style={({ pressed }) => ({ flexDirection: 'row', alignItems: 'center', gap: 12, padding: 10, borderRadius: radius.sm, backgroundColor: pressed || selected ? colors.primaryDim : 'transparent' })}
               >
                 <Text weight="semibold" style={{ flex: 1, fontSize: 16 }}>{o.label}</Text>
-                {selected ? <CheckDot /> : null}
+                {selected ? <CheckDot /> : <MaterialIcons name="chevron-right" size={20} color={colors.textMuted} />}
               </Pressable>
             )
           })}
