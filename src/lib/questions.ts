@@ -1,4 +1,5 @@
-import type { Answer, Question } from './types'
+import { matchesSearch } from './search'
+import type { Answer, Question, QuestionOption } from './types'
 
 /**
  * Questions grouped by their `step` (admin field), steps in order and questions by `order`
@@ -20,6 +21,10 @@ export const isMultiple = (q: Question) => Boolean(q.is_multiple) || q.type === 
 /** Single choice shown as big buttons: touching one goes to the next screen. */
 export const isSingleChoice = (q: Question) =>
   !isMultiple(q) && (q.type === 'dropdown' || q.type === 'radio') && (q.options?.length ?? 0) > 0
+
+/** Answers of a choice question whose label contains what was typed (accents and case ignored). */
+export const matchingOptions = (options: QuestionOption[], query: string) =>
+  options.filter((o) => matchesSearch(o.label, query))
 
 export function isAnswered(answer: Answer | undefined): boolean {
   if (answer === undefined) return false
