@@ -5,6 +5,7 @@ import { ScrollView, View } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 
 import { Button, ErrorText, Footer, StepHeader, Text, Title } from '@/components/ui'
+import { NEXT_STEPS } from '@/lib/requestCopy'
 import { summaryRows } from '@/lib/summary'
 import { useDraft } from '@/state/draft'
 import { followOutcome, useFlowSteps, useSubmitRequest } from '@/state/flow'
@@ -30,10 +31,10 @@ export default function SummaryStep() {
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: colors.card }}>
       <ScrollView contentContainerStyle={{ padding: 20, gap: 16 }}>
-        <StepHeader step={total} total={total} onBack={() => router.back()} />
+        <StepHeader step={total} total={total} note="Votre demande est prête" onBack={() => router.back()} />
         <View style={{ gap: 4 }}>
-          <Title>Récapitulatif</Title>
-          <Text style={{ color: colors.textMuted, fontSize: 14 }}>Vérifiez et confirmez votre demande.</Text>
+          <Title>Votre demande est prête</Title>
+          <Text style={{ color: colors.textMuted, fontSize: 14 }}>Vérifiez-la, puis envoyez-la.</Text>
         </View>
 
         <View style={{ borderRadius: radius.xl, borderWidth: 1, borderColor: colors.borderSubtle, backgroundColor: colors.background, overflow: 'hidden' }}>
@@ -51,16 +52,23 @@ export default function SummaryStep() {
           ))}
         </View>
 
-        <View style={{ flexDirection: 'row', gap: 10, padding: 14, borderRadius: radius.md, backgroundColor: colors.primaryDim }}>
-          <MaterialIcons name="info-outline" size={18} color={colors.primary} />
-          <Text style={{ flex: 1, fontSize: 13, lineHeight: 19, color: colors.primary }}>
-            Votre demande sera transmise aux professionnels de votre zone. Vous recevrez leurs devis directement dans votre espace client.
-          </Text>
+        {/* What happens once sent, like the website. */}
+        <View style={{ gap: 10, padding: 14, borderRadius: radius.lg, backgroundColor: colors.background }}>
+          <Text weight="bold">Et ensuite ?</Text>
+          {NEXT_STEPS.map((text, index) => (
+            <View key={text} style={{ flexDirection: 'row', gap: 10 }}>
+              <View style={{ width: 22, height: 22, borderRadius: 11, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.primaryDim }}>
+                <Text weight="extrabold" style={{ fontSize: 12, color: colors.primary }}>{index + 1}</Text>
+              </View>
+              <Text style={{ flex: 1, fontSize: 14, lineHeight: 20, color: colors.textSecondary }}>{text}</Text>
+            </View>
+          ))}
         </View>
         {submitError ? <ErrorText>{submitError}</ErrorText> : null}
       </ScrollView>
       <Footer>
-        <Button label="Envoyer ma demande" onPress={send} loading={sending} />
+        <Button label="Recevoir mes devis gratuits" onPress={send} loading={sending} />
+        <Text style={{ textAlign: 'center', fontSize: 12, color: colors.textSecondary, marginTop: -2 }}>Gratuit · sans engagement</Text>
         <Button label="Modifier" variant="outline" onPress={() => router.back()} disabled={sending} />
         <Text style={{ textAlign: 'center', fontSize: 12, color: colors.textMuted }}>Un code de confirmation vous sera envoyé par SMS ou e-mail.</Text>
       </Footer>

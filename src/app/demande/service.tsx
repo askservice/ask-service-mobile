@@ -1,16 +1,18 @@
 import Feather from '@expo/vector-icons/Feather'
 import MaterialIcons from '@expo/vector-icons/MaterialIcons'
 import { router } from 'expo-router'
-import { useRef, useState, type ReactNode } from 'react'
+import { useState, type ReactNode } from 'react'
 import { ActivityIndicator, Keyboard, KeyboardAvoidingView, Pressable, ScrollView, TextInput, View } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 
 import { useServiceGroups } from '@/api/requests'
 import { ServiceIconBadge } from '@/components/ServiceIcon'
+import { ServiceTiles } from '@/components/ServiceTiles'
 import { Button, CheckDot, ErrorText, fieldBorder, Footer, StepHeader, Text, Title } from '@/components/ui'
 import { KEYBOARD_BEHAVIOR, useRevealField } from '@/lib/keyboard'
+import { popularServices } from '@/lib/requestCopy'
 import { matchesSearch } from '@/lib/search'
-import type { ClientType } from '@/lib/types'
+import type { ClientType, Service } from '@/lib/types'
 import { useDraft } from '@/state/draft'
 import { useFlowSteps } from '@/state/flow'
 import { colors, fonts, radius } from '@/theme'
@@ -21,7 +23,8 @@ const CLIENT_TYPES: { value: ClientType; label: string; desc: string; icon: Reac
   { value: 'Company', label: 'Entreprise', desc: 'Usage professionnel', icon: <MaterialIcons name="apartment" size={48} color={colors.primary} /> },
 ]
 
-// Step 1: the service (grouped by category, with search) and Particulier / Entreprise.
+// Step 1: the service (popular ones as tiles, or all of them grouped by category with search) and
+// Particulier / Entreprise, like the website.
 export default function ServiceStep() {
   const { draft, update } = useDraft()
   const { total } = useFlowSteps()
@@ -30,8 +33,10 @@ export default function ServiceStep() {
   const [tried, setTried] = useState(false)
   // Service already chosen (home list, or picked here): only that one is shown, the list comes back with « Modifier ».
   const [choosing, setChoosing] = useState(!draft.service)
-  const leaving = useRef(false)
+  // « Autre service » touched (or a service outside the tiles to change): the searchable list.
+  const [searching, setSearching] = useState(false)
   const [focused, setFocused] = useState(false)
+  const tiles = popularServices(groups)
 
   const shownGroups = (groups ?? [])
     .map((g) => ({ ...g, child_categories: g.child_categories.filter((s) => matchesSearch(s.title, search)) }))
@@ -46,25 +51,27 @@ export default function ServiceStep() {
     if (draft.service && draft.clientType) router.push('/demande/adresse')
   }
 
-  // Service already shown (not choosing): touching Particulier / Entreprise goes on after a short pause, like the questions.
-  const pickClientType = (clientType: ClientType) => {
-    update({ clientType })
-    if (choosing || !draft.service || leaving.current) return
-    leaving.current = true
-    setTimeout(() => { leaving.current = false; router.push('/demande/adresse') }, 180)
+  const pickService = (s: Service) => {
+    Keyboard.dismiss()
+    update({ service: s, answers: draft.service?._id === s._id ? draft.answers : {} })
+    setSearch('')
+    setChoosing(false)
+    setSearching(false)
+  }
+
+  const edit = () => {
+    setChoosing(true)
+    setSearching(!tiles.some((s) => s._id === draft.service?._id))
   }
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: colors.card }}>
       <KeyboardAvoidingView style={{ flex: 1 }} behavior={KEYBOARD_BEHAVIOR}>
         <ScrollView ref={scroll} contentContainerStyle={{ padding: 20, gap: 18 }} keyboardShouldPersistTaps="handled">
-          <StepHeader step={1} total={total} close onBack={() => router.back()} />
-          <View style={{ gap: 4, alignItems: 'center' }}>
-            <Title style={{ textAlign: 'center' }}>Votre besoin</Title>
-            <Text style={{ textAlign: 'center', color: colors.textSecondary, fontSize: 14 }}>Sélectionnez le service et votre profil.</Text>
-          </View>
+          <StepHeader step={1} total={total} note="Moins de 2 minutes · 100% gratuit" close onBack={() => router.back()} />
+          <Title>De quoi avez-vous besoin ?</Title>
 
-          <Text weight="bold" style={{ marginBottom: -8 }}>Catégorie de service</Text>
+          <Text weight="bold" style={{ marginBottom: -8 }}>Service</Text>
 
           {!choosing && draft.service ? (
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 14, padding: 16, borderRadius: radius.lg, borderWidth: 2, borderColor: colors.primary, backgroundColor: colors.primaryDim }}>
@@ -73,7 +80,7 @@ export default function ServiceStep() {
               <Pressable
                 accessibilityRole="button"
                 accessibilityLabel="Modifier le service"
-                onPress={() => setChoosing(true)}
+                onPress={edit}
                 hitSlop={8}
                 style={{ flexDirection: 'row', alignItems: 'center', gap: 4, paddingHorizontal: 12, paddingVertical: 8, borderRadius: radius.pill, borderWidth: 1, borderColor: colors.primary, backgroundColor: colors.card }}
               >
@@ -83,7 +90,12 @@ export default function ServiceStep() {
             </View>
           ) : null}
 
-          {choosing ? (
+          {choosing && !searching && tiles.length > 0 ? (
+            <ServiceTiles services={tiles} selectedId={draft.service?._id} onPick={pickService} onSearch={() => setSearching(true)} />
+          ) : null}
+          {choosing && missingService && !searching && tiles.length > 0 ? <ErrorText>Choisissez un service.</ErrorText> : null}
+
+          {choosing && (searching || tiles.length === 0) ? (
             <View style={{ gap: 8 }} onLayout={onFieldLayout}>
               <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, height: 52, paddingHorizontal: 14, borderRadius: radius.md, ...fieldBorder(focused, missingService), backgroundColor: colors.card }}>
                 <TextInput
@@ -120,7 +132,7 @@ export default function ServiceStep() {
                             key={s._id}
                             accessibilityRole="button"
                             accessibilityState={{ selected }}
-                            onPress={() => { Keyboard.dismiss(); update({ service: s, answers: selected ? draft.answers : {} }); setSearch(''); setChoosing(false) }}
+                            onPress={() => pickService(s)}
                             style={({ pressed }) => ({ flexDirection: 'row', alignItems: 'center', gap: 12, padding: 10, borderRadius: radius.sm, backgroundColor: pressed || selected ? colors.primaryDim : 'transparent' })}
                           >
                             <ServiceIconBadge icon={s.icon} size={32} background={selected ? colors.card : undefined} />
@@ -133,6 +145,11 @@ export default function ServiceStep() {
                   ))}
                   {shownGroups.length === 0 ? <Text style={{ color: colors.textMuted, padding: 10 }}>Aucun service ne correspond.</Text> : null}
                 </View>
+              ) : null}
+              {tiles.length > 0 ? (
+                <Pressable accessibilityRole="button" onPress={() => { Keyboard.dismiss(); setSearch(''); setSearching(false) }} hitSlop={8} style={{ alignSelf: 'flex-start', paddingVertical: 10 }}>
+                  <Text weight="semibold" style={{ color: colors.primary }}>← Revenir aux services populaires</Text>
+                </Pressable>
               ) : null}
             </View>
           ) : null}
@@ -148,7 +165,7 @@ export default function ServiceStep() {
                     key={t.value}
                     accessibilityRole="button"
                     accessibilityState={{ selected }}
-                    onPress={() => pickClientType(t.value)}
+                    onPress={() => update({ clientType: t.value })}
                     style={{
                       flex: 1,
                       alignItems: 'center',

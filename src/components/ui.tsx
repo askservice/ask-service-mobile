@@ -98,12 +98,13 @@ export function IconButton({ icon, label, onPress, style }: {
 }
 
 /** Back or close button + "Étape x sur y" + progress bar. */
-export function StepHeader({ step, total, onBack, close }: { step: number; total: number; onBack: () => void; close?: boolean }) {
+/** Back button and progress bar; `note` says what is left (« Moins de 2 minutes »…), like the website. */
+export function StepHeader({ step, total, note, onBack, close }: { step: number; total: number; note: string; onBack: () => void; close?: boolean }) {
   return (
     <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
       <IconButton icon={close ? 'close' : 'arrow-back'} label={close ? 'Fermer' : 'Retour'} onPress={onBack} />
       <View style={{ flex: 1, gap: 6 }}>
-        <Text weight="semibold" style={{ fontSize: 12, color: colors.textMuted }}>{`Étape ${step} sur ${total}`}</Text>
+        <Text weight="semibold" style={{ fontSize: 13, color: colors.primaryDark }}>{note}</Text>
         <View style={{ height: 6, borderRadius: 3, backgroundColor: colors.primaryDim }}>
           <View style={{ width: `${Math.min(100, (step / total) * 100)}%`, height: 6, borderRadius: 3, backgroundColor: colors.primary }} />
         </View>
