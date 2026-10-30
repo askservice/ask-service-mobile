@@ -126,7 +126,11 @@ function QuestionBlock({ question: q, answer, showHint, error, onAnswer, onPick,
     <View style={{ gap: 14 }} onLayout={(e) => onLayout(e.nativeEvent.layout.y)}>
       <View style={{ gap: 6 }}>
         <Title>{q.label}</Title>
-        {showHint ? <Text style={{ color: colors.textMuted, fontSize: 14 }}>Touchez une réponse pour passer à la suite.</Text> : null}
+        {showHint ? (
+          <Text style={{ color: colors.textMuted, fontSize: 14 }}>
+            {isSingleChoice(q) ? 'Touchez le champ pour voir les réponses.' : 'Touchez une réponse pour passer à la suite.'}
+          </Text>
+        ) : null}
       </View>
 
       {isSingleChoice(q) ? (
@@ -177,8 +181,8 @@ function QuestionBlock({ question: q, answer, showHint, error, onAnswer, onPick,
 }
 
 /**
- * Single choice, like the address: a field over the answers set in the admin (all listed, filtered
- * while typing). Once answered, only the answer is shown with « Modifier ».
+ * Single choice, like the address: a field whose answers (set in the admin) unfold under it once
+ * touched, filtered while typing. Once answered, only the answer is shown with « Modifier ».
  */
 function ChoiceField({ label, options, answer, error, onPick, onTyping }: {
   label: string
@@ -191,11 +195,14 @@ function ChoiceField({ label, options, answer, error, onPick, onTyping }: {
   const [query, setQuery] = useState('')
   const [focused, setFocused] = useState(false)
   const [choosing, setChoosing] = useState(!isAnswered(answer))
+  // List closed until the field is touched, then left open until an answer is chosen (like the address suggestions).
+  const [open, setOpen] = useState(false)
   const shown = matchingOptions(options, query)
   const chosen = options.find((o) => o.value === answer)
 
   const pick = (value: string) => {
     setQuery('')
+    setOpen(false)
     setChoosing(false)
     onPick(value)
   }
@@ -224,8 +231,8 @@ function ChoiceField({ label, options, answer, error, onPick, onTyping }: {
       <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, height: 52, paddingHorizontal: 14, borderRadius: radius.md, ...fieldBorder(focused, error), backgroundColor: colors.card }}>
         <TextInput
           value={query}
-          onChangeText={(t) => { setQuery(t); onTyping(true, matchingOptions(options, t).length) }}
-          onFocus={() => { setFocused(true); onTyping(true, shown.length) }}
+          onChangeText={(t) => { setQuery(t); setOpen(true); onTyping(true, matchingOptions(options, t).length) }}
+          onFocus={() => { setFocused(true); setOpen(true); onTyping(true, shown.length) }}
           onBlur={() => { setFocused(false); onTyping(false, 0) }}
           placeholder="Rechercher une réponse"
           placeholderTextColor={colors.textMuted}
@@ -241,24 +248,26 @@ function ChoiceField({ label, options, answer, error, onPick, onTyping }: {
       </View>
       {error ? <ErrorText>Choisissez une réponse dans la liste.</ErrorText> : null}
 
-      <View style={{ padding: 6, borderRadius: radius.lg, borderWidth: 1, borderColor: colors.border, backgroundColor: colors.card }}>
-        {shown.map((o) => {
-          const selected = o.value === answer
-          return (
-            <Pressable
-              key={o.value}
-              accessibilityRole="button"
-              accessibilityState={{ selected }}
-              onPress={() => pick(o.value)}
-              style={({ pressed }) => ({ flexDirection: 'row', alignItems: 'center', gap: 12, minHeight: 48, paddingHorizontal: 10, paddingVertical: 10, borderRadius: radius.sm, backgroundColor: pressed || selected ? colors.primaryDim : 'transparent' })}
-            >
-              <Text weight="semibold" style={{ flex: 1, fontSize: 16 }}>{o.label}</Text>
-              {selected ? <CheckDot /> : null}
-            </Pressable>
-          )
-        })}
-        {shown.length === 0 ? <Text style={{ color: colors.textMuted, padding: 10 }}>Aucune réponse ne correspond.</Text> : null}
-      </View>
+      {open ? (
+        <View style={{ padding: 6, borderRadius: radius.lg, borderWidth: 1, borderColor: colors.border, backgroundColor: colors.card }}>
+          {shown.map((o) => {
+            const selected = o.value === answer
+            return (
+              <Pressable
+                key={o.value}
+                accessibilityRole="button"
+                accessibilityState={{ selected }}
+                onPress={() => pick(o.value)}
+                style={({ pressed }) => ({ flexDirection: 'row', alignItems: 'center', gap: 12, minHeight: 48, paddingHorizontal: 10, paddingVertical: 10, borderRadius: radius.sm, backgroundColor: pressed || selected ? colors.primaryDim : 'transparent' })}
+              >
+                <Text weight="semibold" style={{ flex: 1, fontSize: 16 }}>{o.label}</Text>
+                {selected ? <CheckDot /> : null}
+              </Pressable>
+            )
+          })}
+          {shown.length === 0 ? <Text style={{ color: colors.textMuted, padding: 10 }}>Aucune réponse ne correspond.</Text> : null}
+        </View>
+      ) : null}
     </View>
   )
 }
