@@ -6,12 +6,14 @@ import { ActivityIndicator, Image, Keyboard, Pressable, ScrollView, TextInput, V
 import { useServiceGroups } from '@/api/requests'
 import { useMyRequests, useProfile } from '@/api/me'
 import { AuthMenu } from '@/components/AuthMenu'
+import { HowItWorks } from '@/components/HowItWorks'
 import { RequestCard } from '@/components/RequestCard'
-import { ServiceCarousel } from '@/components/ServiceCarousel'
 import { ServiceIconBadge } from '@/components/ServiceIcon'
+import { ServiceTiles } from '@/components/ServiceTiles'
 import { TabScreen } from '@/components/TabScreen'
 import { Button, ErrorText, fieldBorder, Text } from '@/components/ui'
 import { useRevealField } from '@/lib/keyboard'
+import { popularServices, TRUST_POINTS } from '@/lib/requestCopy'
 import { isOngoing } from '@/lib/requests'
 import { matchesSearch } from '@/lib/search'
 import type { Service } from '@/lib/types'
@@ -19,8 +21,9 @@ import { useDraft } from '@/state/draft'
 import { useSession } from '@/state/session'
 import { colors, fonts, radius } from '@/theme'
 
-// Home: "De quoi avez-vous besoin ?" and a search field that opens the list of services (grouped
-// by category; typing filters it). Signed out: reassurance line and services carousel; signed in: the ongoing request.
+// Home: "De quoi avez-vous besoin ?", a search field that opens the list of services (grouped
+// by category; typing filters it) and the popular services as tiles, like the website.
+// Signed out: reassurance line, how it works and reviews; signed in: the ongoing request.
 export default function Home() {
   const { reset, update } = useDraft()
   const { token } = useSession()
@@ -136,6 +139,10 @@ export default function Home() {
           ) : null}
         </View>
 
+        {!open ? (
+          <ServiceTiles services={popularServices(groups)} onPick={start} onSearch={openList} />
+        ) : null}
+
         {!open && token && ongoing ? (
           <View style={{ gap: 10 }}>
             <Text weight="bold" style={{ fontSize: 16 }}>Votre demande en cours</Text>
@@ -145,21 +152,15 @@ export default function Home() {
 
         {!open && !token ? (
           <>
-            <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginTop: -8 }}>
-              {['Gratuit', 'Rapide', 'Sans engagement'].map((t) => (
+            <View style={{ flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between', rowGap: 6 }}>
+              {TRUST_POINTS.map((t) => (
                 <View key={t} style={{ flexDirection: 'row', alignItems: 'center', gap: 5 }}>
                   <MaterialIcons name="check" size={16} color={colors.success} />
                   <Text style={{ fontSize: 13, color: colors.textSecondary }}>{t}</Text>
                 </View>
               ))}
             </View>
-
-            {groups ? (
-              <View style={{ gap: 10, marginTop: 8 }}>
-                <Text weight="bold" style={{ fontSize: 16 }}>Nos services</Text>
-                <ServiceCarousel services={groups.flatMap((g) => g.child_categories)} onPick={start} />
-              </View>
-            ) : null}
+            <HowItWorks />
           </>
         ) : null}
       </ScrollView>

@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/react-query'
 
-import type { Question, ServiceGroup } from '@/lib/types'
+import type { Question, ServiceGroup, Testimonial } from '@/lib/types'
 
 import { api, apiGet } from './client'
 
@@ -18,6 +18,15 @@ export function useServiceGroups() {
         .filter((g) => g.child_categories.length > 0)
     },
     staleTime: 10 * 60 * 1000,
+  })
+}
+
+/** Client reviews of the admin, the same as on the website. */
+export function useTestimonials() {
+  return useQuery({
+    queryKey: ['testimonials'],
+    queryFn: () => apiGet<Testimonial[]>('/user/testimonials'),
+    staleTime: 30 * 60 * 1000,
   })
 }
 
