@@ -1,5 +1,5 @@
 import MaterialIcons from '@expo/vector-icons/MaterialIcons'
-import type { ComponentProps, ReactNode } from 'react'
+import { useState, type ComponentProps, type ReactNode } from 'react'
 import {
   ActivityIndicator,
   Pressable,
@@ -152,7 +152,13 @@ export function CheckDot() {
   )
 }
 
-export function Field({ label, hint, error, style, ...input }: TextInputProps & { label: string; hint?: string; error?: string }) {
+/** Border of a text field, the same on every screen: grey at rest, blue while typing, red on error. */
+export function fieldBorder(focused: boolean, error?: boolean): ViewStyle {
+  return { borderWidth: focused || error ? 2 : 1, borderColor: error ? colors.danger : focused ? colors.primary : colors.border }
+}
+
+export function Field({ label, hint, error, style, onFocus, onBlur, ...input }: TextInputProps & { label: string; hint?: string; error?: string }) {
+  const [focused, setFocused] = useState(false)
   return (
     <View style={[{ gap: 6 }, style as StyleProp<ViewStyle>]}>
       <Text weight="semibold" style={{ fontSize: 13 }}>
@@ -163,13 +169,14 @@ export function Field({ label, hint, error, style, ...input }: TextInputProps & 
         accessibilityLabel={label}
         placeholderTextColor={colors.textMuted}
         {...input}
+        onFocus={(e) => { setFocused(true); onFocus?.(e) }}
+        onBlur={(e) => { setFocused(false); onBlur?.(e) }}
         style={{
           minHeight: input.multiline ? 96 : 48,
           paddingHorizontal: 14,
           paddingVertical: input.multiline ? 12 : 0,
           borderRadius: 12,
-          borderWidth: error ? 2 : 1,
-          borderColor: error ? colors.danger : colors.border,
+          ...fieldBorder(focused, Boolean(error)),
           fontFamily: fonts.regular,
           fontSize: 16,
           color: colors.text,
