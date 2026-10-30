@@ -86,7 +86,6 @@ export default function ServiceStep() {
           {choosing ? (
             <View style={{ gap: 8 }} onLayout={onFieldLayout}>
               <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, height: 52, paddingHorizontal: 14, borderRadius: radius.md, ...fieldBorder(focused, missingService), backgroundColor: colors.card }}>
-                <MaterialIcons name="search" size={22} color={focused ? colors.primary : colors.textMuted} />
                 <TextInput
                   value={search}
                   onChangeText={setSearch}
