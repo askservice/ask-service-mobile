@@ -1,4 +1,4 @@
-import { contactErrors, isValidPhone, splitPhone } from '../contact'
+import { contactErrors, isValidPhone, splitPhone, withProfileContact } from '../contact'
 import { dynamicAnswers, isSingleChoice, missingAnswers, questionSteps } from '../questions'
 import { requestPayload, submitOutcome } from '../request'
 import { matchesSearch } from '../search'
@@ -55,6 +55,21 @@ describe('contact details', () => {
     expect(isValidPhone('0612')).toBe(false)
     expect(Object.keys(contactErrors({ firstName: '', lastName: 'D', phone: '12', email: 'nope', notes: '' }))).toEqual(['firstName', 'phone', 'email'])
     expect(contactErrors(DRAFT.contact)).toEqual({})
+  })
+})
+
+describe('contact details of a signed-in client', () => {
+  const empty = { firstName: '', lastName: '', phone: '', email: '', notes: '' }
+  const profile = { first_name: 'Marie', last_name: 'Dupont', phone: '+33612345678', email: 'marie@email.fr' }
+  it('are filled from the account', () => {
+    expect(withProfileContact(empty, profile)).toEqual({ firstName: 'Marie', lastName: 'Dupont', phone: '06 12 34 56 78', email: 'marie@email.fr', notes: '' })
+  })
+  it('keep what the client already typed', () => {
+    const typed = { ...empty, firstName: 'Léa', phone: '07 00 00 00 00', notes: 'RAS' }
+    expect(withProfileContact(typed, profile)).toEqual({ firstName: 'Léa', lastName: 'Dupont', phone: '07 00 00 00 00', email: 'marie@email.fr', notes: 'RAS' })
+  })
+  it('stay empty when the account has no phone', () => {
+    expect(withProfileContact(empty, { ...profile, phone: null }).phone).toBe('')
   })
 })
 

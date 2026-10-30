@@ -1,6 +1,7 @@
 import { parsePhoneNumberFromString } from 'libphonenumber-js'
 
-import type { Contact } from './types'
+import { displayPhone } from './profile'
+import type { Contact, Profile } from './types'
 
 /** Phone in the format the API expects: national number + country code (French by default). */
 export function splitPhone(raw: string): { phone: string; country_code: string } {
@@ -26,4 +27,16 @@ export function contactErrors(c: Contact): ContactErrors {
   if (!isValidPhone(c.phone)) errors.phone = 'Numéro de téléphone invalide.'
   if (!isValidEmail(c.email)) errors.email = 'Adresse e-mail invalide.'
   return errors
+}
+
+/** Contact details of a signed-in client, filled from the account like the website: only the empty fields, all still editable. */
+export function withProfileContact(c: Contact, p: Pick<Profile, 'first_name' | 'last_name' | 'phone' | 'email'>): Contact {
+  const fill = (current: string, saved: string | null | undefined) => (current.trim() ? current : (saved ?? '').trim())
+  return {
+    ...c,
+    firstName: fill(c.firstName, p.first_name),
+    lastName: fill(c.lastName, p.last_name),
+    phone: fill(c.phone, p.phone ? displayPhone(p.phone) : ''),
+    email: fill(c.email, p.email),
+  }
 }

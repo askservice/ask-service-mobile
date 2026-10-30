@@ -1,6 +1,6 @@
 import { GEOCODING_URL } from '@/config'
 
-import type { Location } from './types'
+import type { Location, Profile } from './types'
 
 export type AddressSuggestion = { id: string; title: string; subtitle: string; location: Location }
 
@@ -54,4 +54,10 @@ export function searchAddress(query: string, signal?: AbortSignal): Promise<Addr
 export async function addressAt(latitude: number, longitude: number): Promise<AddressSuggestion | null> {
   const list = await features(`${GEOCODING_URL}/reverse?${new URLSearchParams({ lat: String(latitude), lon: String(longitude), limit: '1' })}`)
   return list[0] ?? null
+}
+
+/** Search text of the address saved in the client's account, or null when there is none. */
+export function profileAddressQuery(p: Pick<Profile, 'address' | 'postal_code' | 'city'>): string | null {
+  const q = [p.address, p.postal_code, p.city].map((s) => (s ?? '').trim()).filter(Boolean).join(' ')
+  return q.length >= 3 ? q : null
 }
