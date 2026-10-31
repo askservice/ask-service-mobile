@@ -1,5 +1,5 @@
 import MaterialIcons from '@expo/vector-icons/MaterialIcons'
-import { router } from 'expo-router'
+import { router, useLocalSearchParams } from 'expo-router'
 import { useState } from 'react'
 import { KeyboardAvoidingView, Linking, Pressable, ScrollView, View } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
@@ -21,9 +21,11 @@ const SITE = 'https://askservice.fr'
 
 // Client sign-up like the website: name, e-mail, optional phone, terms, then the 6-digit code
 // sent to the e-mail. No password: next time the client signs in with a code.
+// `email`: typed on the sign-in screen when the address has no account yet.
 export default function SignUp() {
   const { signIn } = useSession()
-  const [form, setForm] = useState<SignupForm>({ firstName: '', lastName: '', email: '', phone: '', termsAccepted: false })
+  const params = useLocalSearchParams<{ email?: string }>()
+  const [form, setForm] = useState<SignupForm>({ firstName: '', lastName: '', email: params.email ?? '', phone: '', termsAccepted: false })
   const [errors, setErrors] = useState<SignupErrors>({})
   const [step, setStep] = useState<'form' | 'code'>('form')
   const [code, setCode] = useState('')
