@@ -74,7 +74,7 @@ export default function Home() {
         <View style={{ gap: 6, marginTop: 16 }}>
           {token && profile.data?.first_name ? <Text style={{ color: colors.textMuted }}>{`Bonjour ${profile.data.first_name}`}</Text> : null}
           <Text weight="bold" accessibilityRole="header" style={{ fontSize: 28, lineHeight: 32 }}>De quoi avez-vous besoin ?</Text>
-          <Text style={{ color: colors.textSecondary, lineHeight: 21 }}>Décrivez votre besoin, jusqu’à 3 professionnels vérifiés vous répondent.</Text>
+          <Text style={{ color: colors.textSecondary, lineHeight: 21 }}>Décrivez votre besoin, des professionnels vérifiés vous répondent.</Text>
         </View>
 
         <View style={{ gap: 8 }} onLayout={onFieldLayout}>

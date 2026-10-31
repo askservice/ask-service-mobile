@@ -22,7 +22,7 @@ export function popularServices(groups: ServiceGroup[] | undefined): Service[] {
 export const HOW_IT_WORKS = [
   { title: 'Décrivez votre besoin.', text: "Quelques questions sur votre projet, en 2 minutes. C'est gratuit et sans engagement." },
   {
-    title: "Jusqu'à 3 professionnels vous contactent.",
+    title: "Des professionnels vérifiés vous contactent.",
     text: 'Nous transmettons votre demande à des professionnels du secteur, près de chez vous. Ils échangent avec vous pour préciser votre besoin, puis vous envoient leur devis.',
   },
   {
@@ -37,7 +37,7 @@ export const NEXT_STEPS = [
   ...HOW_IT_WORKS.slice(1).map((step) => step.title),
 ]
 
-export const TRUST_POINTS = ['100% gratuit', 'Pros vérifiés', "Jusqu'à 3 devis"]
+export const TRUST_POINTS = ['100% gratuit', 'Pros vérifiés', 'Plusieurs devis gratuits']
 
 /** What is left at question step `index` of `stepCount`, rather than « step 4 of 7 ». */
 export function questionsLeftNote(index: number, stepCount: number) {

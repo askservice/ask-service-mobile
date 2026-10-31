@@ -8,7 +8,7 @@ import { useDraft } from '@/state/draft'
 import { colors } from '@/theme'
 
 const NEXT_STEPS = [
-  { title: "Jusqu'à 3 pros vous contactent", text: 'Par téléphone ou dans la messagerie.' },
+  { title: "Des professionnels vous contactent", text: 'Par téléphone ou dans la messagerie.' },
   { title: 'Vous recevez leurs devis', text: 'Vous êtes prévenu à chaque nouveau devis.' },
   { title: 'Vous choisissez librement', text: 'Gratuit et sans engagement.' },
 ]
