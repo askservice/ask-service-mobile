@@ -2,7 +2,7 @@ import MaterialIcons from '@expo/vector-icons/MaterialIcons'
 import { useQuery } from '@tanstack/react-query'
 import * as ExpoLocation from 'expo-location'
 import { router } from 'expo-router'
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { ActivityIndicator, Keyboard, KeyboardAvoidingView, Pressable, ScrollView, TextInput, View } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 
@@ -28,7 +28,6 @@ export default function AddressStep() {
   const [positionError, setPositionError] = useState<string | null>(null)
   // Address already chosen (back from the next step): only that one is shown, the field comes back with « Modifier ».
   const [choosing, setChoosing] = useState(!draft.location)
-  const advance = useRef(false)
   const accountAddress = useAccountAddress()
 
   // Suggestions 300 ms after the last key, previous search cancelled.
@@ -48,14 +47,6 @@ export default function AddressStep() {
   // Field moved to the top while typing, so the suggestions stay above the keyboard.
   const { scroll, onFieldLayout, reveal } = useRevealField(focused, suggestions.length)
 
-  // An address just picked goes on after a short pause, like the questions (once the questions are known).
-  useEffect(() => {
-    if (!advance.current || !draft.location || loadingQuestions) return
-    advance.current = false
-    const timer = setTimeout(() => goToQuestionStep(0, steps.length), 180)
-    return () => clearTimeout(timer)
-  }, [draft.location, loadingQuestions, steps.length])
-
   const choose = (s: AddressSuggestion) => {
     Keyboard.dismiss()
     update({ location: s.location })
@@ -64,7 +55,6 @@ export default function AddressStep() {
     setFieldError(null)
     setPositionError(null)
     setChoosing(false)
-    advance.current = true
   }
 
   const useMyPosition = async () => {
@@ -93,7 +83,7 @@ export default function AddressStep() {
     <SafeAreaView style={{ flex: 1, backgroundColor: colors.card }}>
       <KeyboardAvoidingView style={{ flex: 1 }} behavior={KEYBOARD_BEHAVIOR}>
         <ScrollView ref={scroll} contentContainerStyle={{ padding: 20, gap: 20 }} keyboardShouldPersistTaps="handled">
-          <StepHeader step={2} total={total} onBack={() => router.back()} />
+          <StepHeader step={2} total={total} note="Moins de 2 minutes · 100% gratuit" onBack={() => router.back()} />
           <View style={{ gap: 6 }}>
             <Title>Où a lieu l’intervention ?</Title>
             <Text style={{ color: colors.textMuted, fontSize: 14 }}>Pour trouver des professionnels près de chez vous.</Text>

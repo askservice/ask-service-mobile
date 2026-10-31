@@ -10,21 +10,20 @@ import { Button, CheckDot, ErrorText, fieldBorder, Field, Footer, OptionButton, 
 import { longDate } from '@/lib/dates'
 import { KEYBOARD_BEHAVIOR, useRevealField } from '@/lib/keyboard'
 import { isAnswered, isMultiple, isSingleChoice, matchingOptions, missingAnswers } from '@/lib/questions'
+import { questionsLeftNote } from '@/lib/requestCopy'
 import type { Answer, Question, QuestionOption } from '@/lib/types'
 import { useDraft } from '@/state/draft'
 import { goToQuestionStep, useFlowSteps } from '@/state/flow'
 import { colors, fonts, radius } from '@/theme'
 
 // Steps 3 and next: the service's questions (admin), one step per screen. A single-choice question
-// is a field over its answers, like the address; a step made of one such question goes on as soon
-// as an answer is touched.
+// is a field over its answers, like the address. The client goes on with « Continuer », like the website.
 export default function QuestionStep() {
   const { step } = useLocalSearchParams<{ step: string }>()
   const index = Number(step ?? 0)
   const { draft, update } = useDraft()
   const { steps, total, isLoading, error, refetch } = useFlowSteps()
   const [tried, setTried] = useState(false)
-  const leaving = useRef(false)
   // Choice list open, and where each question starts in the scrolled content.
   const [openKey, setOpenKey] = useState<string | null>(null)
   const [shownCount, setShownCount] = useState(0)
@@ -34,8 +33,6 @@ export default function QuestionStep() {
   const questions = steps[index] ?? []
   const answers = draft.answers
   const setAnswer = (key: string, value: Answer) => update({ answers: { ...answers, [key]: value } })
-  const autoAdvance = questions.length === 1 && (isSingleChoice(questions[0]) || questions[0].type === 'date')
-  const remaining = steps.length - index - 1
 
   const next = () => {
     setTried(true)
@@ -43,13 +40,10 @@ export default function QuestionStep() {
     goToQuestionStep(index + 1, steps.length)
   }
 
-  // Touch an answer -> short pause so the selection is seen, then the next screen.
-  const answerAndGo = (key: string, value: string) => {
+  // An answer touched: shown in its card, the keyboard closes.
+  const pick = (key: string, value: string) => {
     Keyboard.dismiss()
     setAnswer(key, value)
-    if (!autoAdvance || leaving.current) return
-    leaving.current = true
-    setTimeout(() => { leaving.current = false; goToQuestionStep(index + 1, steps.length) }, 180)
   }
 
   if (isLoading) return <ActivityIndicator color={colors.primary} style={{ flex: 1 }} />
@@ -66,7 +60,7 @@ export default function QuestionStep() {
     <SafeAreaView style={{ flex: 1, backgroundColor: colors.card }}>
       <KeyboardAvoidingView style={{ flex: 1 }} behavior={KEYBOARD_BEHAVIOR}>
         <ScrollView ref={scroll} contentContainerStyle={{ padding: 20, gap: 22 }} keyboardShouldPersistTaps="handled" keyboardDismissMode="on-drag">
-          <StepHeader step={index + 3} total={total} onBack={() => router.back()} />
+          <StepHeader step={index + 3} total={total} note={questionsLeftNote(index, steps.length)} onBack={() => router.back()} />
 
           {draft.service ? (
             <View style={{ alignSelf: 'flex-start', flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: colors.primaryDim, borderRadius: radius.pill, paddingVertical: 4, paddingRight: 12, paddingLeft: 4 }}>
@@ -82,10 +76,9 @@ export default function QuestionStep() {
               key={q._id}
               question={q}
               answer={answers[q.key]}
-              showHint={autoAdvance}
               error={tried && missingAnswers([q], answers).length > 0}
               onAnswer={(value) => setAnswer(q.key, value)}
-              onPick={(value) => answerAndGo(q.key, value)}
+              onPick={(value) => pick(q.key, value)}
               onLayout={(y) => { blockY.current[q.key] = y }}
               onTyping={(open, count) => {
                 if (!open) { setOpenKey((k) => (k === q.key ? null : k)); return }
@@ -97,23 +90,16 @@ export default function QuestionStep() {
           ))}
         </ScrollView>
         <Footer>
-          {autoAdvance ? (
-            <Text style={{ textAlign: 'center', color: colors.textSecondary, fontSize: 14, paddingVertical: 8 }}>
-              {remaining > 0 ? `Encore ${remaining} question${remaining > 1 ? 's' : ''}, moins d'une minute` : 'Dernière question'}
-            </Text>
-          ) : (
-            <Button label="Continuer" onPress={next} />
-          )}
+          <Button label="Continuer" onPress={next} />
         </Footer>
       </KeyboardAvoidingView>
     </SafeAreaView>
   )
 }
 
-function QuestionBlock({ question: q, answer, showHint, error, onAnswer, onPick, onLayout, onTyping }: {
+function QuestionBlock({ question: q, answer, error, onAnswer, onPick, onLayout, onTyping }: {
   question: Question
   answer: Answer | undefined
-  showHint: boolean
   error: boolean
   onAnswer: (value: Answer) => void
   onPick: (value: string) => void
@@ -125,10 +111,8 @@ function QuestionBlock({ question: q, answer, showHint, error, onAnswer, onPick,
     <View style={{ gap: 14 }} onLayout={(e) => onLayout(e.nativeEvent.layout.y)}>
       <View style={{ gap: 6 }}>
         <Title>{q.label}</Title>
-        {showHint ? (
-          <Text style={{ color: colors.textMuted, fontSize: 14 }}>
-            {isSingleChoice(q) ? 'Touchez le champ pour voir les réponses.' : 'Touchez une réponse pour passer à la suite.'}
-          </Text>
+        {isSingleChoice(q) ? (
+          <Text style={{ color: colors.textMuted, fontSize: 14 }}>Touchez le champ pour voir les réponses.</Text>
         ) : null}
       </View>
 

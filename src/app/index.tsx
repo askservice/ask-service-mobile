@@ -6,12 +6,14 @@ import { ActivityIndicator, Image, Keyboard, Pressable, ScrollView, TextInput, V
 import { useServiceGroups } from '@/api/requests'
 import { useMyRequests, useProfile } from '@/api/me'
 import { AuthMenu } from '@/components/AuthMenu'
+import { HowItWorks } from '@/components/HowItWorks'
 import { RequestCard } from '@/components/RequestCard'
-import { ServiceCarousel } from '@/components/ServiceCarousel'
 import { ServiceIconBadge } from '@/components/ServiceIcon'
+import { ServiceTiles } from '@/components/ServiceTiles'
 import { TabScreen } from '@/components/TabScreen'
 import { Button, ErrorText, fieldBorder, Text } from '@/components/ui'
 import { useRevealField } from '@/lib/keyboard'
+import { popularServices, TRUST_POINTS } from '@/lib/requestCopy'
 import { isOngoing } from '@/lib/requests'
 import { matchesSearch } from '@/lib/search'
 import type { Service } from '@/lib/types'
@@ -19,8 +21,10 @@ import { useDraft } from '@/state/draft'
 import { useSession } from '@/state/session'
 import { colors, fonts, radius } from '@/theme'
 
-// Home: "De quoi avez-vous besoin ?" and a search field that opens the list of services (grouped
-// by category; typing filters it). Signed out: reassurance line and services carousel; signed in: the ongoing request.
+// Home: "De quoi avez-vous besoin ?" and the popular services as tiles, like the website;
+// « Autre service : rechercher » opens the search field and the list of services (grouped by
+// category; typing filters it).
+// Signed out: reassurance line, how it works and reviews; signed in: the ongoing request.
 export default function Home() {
   const { reset, update } = useDraft()
   const { token } = useSession()
@@ -38,8 +42,8 @@ export default function Home() {
   // List open: field moved to the top, so the list stays above the keyboard.
   const { scroll, onFieldLayout } = useRevealField(open, shownGroups.length)
 
-  // First touch opens the list without the keyboard (it would hide the list); once open, a touch
-  // on the field brings the keyboard to filter.
+  // « Autre service » shows the field and the list without the keyboard (it would hide the list);
+  // a touch on the field then brings the keyboard to filter.
   const openList = () => {
     if (open) input.current?.focus()
     else setOpen(true)
@@ -74,13 +78,14 @@ export default function Home() {
         </View>
 
         <View style={{ gap: 8 }} onLayout={onFieldLayout}>
-          <Pressable
-            onPress={openList}
-            accessibilityLabel="Ouvrir la liste des services"
-            style={{ flexDirection: 'row', alignItems: 'center', gap: 10, height: 54, paddingHorizontal: 16, borderRadius: radius.md, backgroundColor: colors.card, ...fieldBorder(open) }}
-          >
-            <MaterialIcons name="search" size={22} color={open ? colors.primary : colors.textMuted} />
-            {open ? (
+          {/* Search only once « Autre service : rechercher » is touched: the tiles come first. */}
+          {open ? (
+            <Pressable
+              onPress={openList}
+              accessibilityLabel="Rechercher un service"
+              style={{ flexDirection: 'row', alignItems: 'center', gap: 10, height: 54, paddingHorizontal: 16, borderRadius: radius.md, backgroundColor: colors.card, ...fieldBorder(true) }}
+            >
+              <MaterialIcons name="search" size={22} color={colors.primary} />
               <TextInput
                 ref={input}
                 value={search}
@@ -91,17 +96,11 @@ export default function Home() {
                 returnKeyType="search"
                 style={{ flex: 1, alignSelf: 'stretch', fontFamily: fonts.regular, fontSize: 15, color: colors.text }}
               />
-            ) : (
-              <Text numberOfLines={1} style={{ flex: 1, color: colors.textMuted }}>Rechercher un service (ex. : nettoyage)</Text>
-            )}
-            {open ? (
               <Pressable accessibilityRole="button" accessibilityLabel="Fermer la liste" onPress={close} hitSlop={8}>
                 <MaterialIcons name="close" size={22} color={colors.textMuted} />
               </Pressable>
-            ) : (
-              <MaterialIcons name="expand-more" size={24} color={colors.textMuted} />
-            )}
-          </Pressable>
+            </Pressable>
+          ) : null}
 
           {open ? (
             <View style={{ padding: 6, borderRadius: radius.lg, borderWidth: 1, borderColor: colors.border, backgroundColor: colors.card }}>
@@ -136,6 +135,10 @@ export default function Home() {
           ) : null}
         </View>
 
+        {!open ? (
+          <ServiceTiles services={popularServices(groups)} onPick={start} onSearch={openList} />
+        ) : null}
+
         {!open && token && ongoing ? (
           <View style={{ gap: 10 }}>
             <Text weight="bold" style={{ fontSize: 16 }}>Votre demande en cours</Text>
@@ -145,21 +148,15 @@ export default function Home() {
 
         {!open && !token ? (
           <>
-            <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginTop: -8 }}>
-              {['Gratuit', 'Rapide', 'Sans engagement'].map((t) => (
+            <View style={{ flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between', rowGap: 6 }}>
+              {TRUST_POINTS.map((t) => (
                 <View key={t} style={{ flexDirection: 'row', alignItems: 'center', gap: 5 }}>
                   <MaterialIcons name="check" size={16} color={colors.success} />
                   <Text style={{ fontSize: 13, color: colors.textSecondary }}>{t}</Text>
                 </View>
               ))}
             </View>
-
-            {groups ? (
-              <View style={{ gap: 10, marginTop: 8 }}>
-                <Text weight="bold" style={{ fontSize: 16 }}>Nos services</Text>
-                <ServiceCarousel services={groups.flatMap((g) => g.child_categories)} onPick={start} />
-              </View>
-            ) : null}
+            <HowItWorks />
           </>
         ) : null}
       </ScrollView>
