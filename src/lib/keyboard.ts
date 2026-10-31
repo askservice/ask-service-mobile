@@ -31,7 +31,8 @@ export function useScrollToEndOnFocus() {
 /**
  * Field with a list that opens under it (address, services): while `active`, the field is scrolled
  * to the top when the keyboard comes up or the list changes, so the list stays above the keyboard.
- * `onFieldLayout` goes on the field's block, a direct child of the scrolled content.
+ * `onFieldLayout` goes on the field's block, a direct child of the scrolled content. A screen with
+ * several such fields sets `fieldY` to the one being used instead.
  */
 export function useRevealField(active: boolean, listSize: number) {
   const scroll = useRef<ComponentRef<typeof ScrollView>>(null)
@@ -47,5 +48,5 @@ export function useRevealField(active: boolean, listSize: number) {
   }, [active, listSize, reveal])
 
   const onFieldLayout = (e: LayoutChangeEvent) => { fieldY.current = e.nativeEvent.layout.y }
-  return { scroll, onFieldLayout, reveal }
+  return { scroll, onFieldLayout, reveal, fieldY }
 }

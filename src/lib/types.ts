@@ -32,6 +32,16 @@ export type Question = {
 
 export type ClientType = 'Individual' | 'Company'
 
+/** Client review written in the admin (shown on the home screen). */
+export type Testimonial = {
+  _id: string
+  name: string
+  designation?: string | null
+  company_name?: string | null
+  message: string
+  rating?: number | null
+}
+
 export type Location = {
   address: string
   pincode: string

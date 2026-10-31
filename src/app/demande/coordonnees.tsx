@@ -42,7 +42,7 @@ export default function ContactStep() {
     <SafeAreaView style={{ flex: 1, backgroundColor: colors.card }}>
       <KeyboardAvoidingView style={{ flex: 1 }} behavior={KEYBOARD_BEHAVIOR}>
         <ScrollView ref={scroll} contentContainerStyle={{ padding: 20, gap: 16 }} keyboardShouldPersistTaps="handled">
-          <StepHeader step={contactStep} total={total} onBack={() => router.back()} />
+          <StepHeader step={contactStep} total={total} note="C'est presque fini" onBack={() => router.back()} />
           <Title>Comment les pros peuvent-ils vous joindre ?</Title>
 
           <View style={{ flexDirection: 'row', gap: 10 }}>

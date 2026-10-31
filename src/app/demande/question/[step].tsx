@@ -1,33 +1,38 @@
+import MaterialIcons from '@expo/vector-icons/MaterialIcons'
 import { router, useLocalSearchParams } from 'expo-router'
-import { useRef, useState } from 'react'
-import { ActivityIndicator, ScrollView, View } from 'react-native'
+import { useRef, useState, type ComponentRef } from 'react'
+import { ActivityIndicator, Keyboard, KeyboardAvoidingView, Pressable, ScrollView, TextInput, View } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 
 import { Calendar } from '@/components/Calendar'
 import { ServiceIconBadge } from '@/components/ServiceIcon'
-import { Button, ErrorText, Field, Footer, OptionButton, StepHeader, Text, Title } from '@/components/ui'
+import { Button, CheckDot, ErrorText, fieldBorder, Field, Footer, OptionButton, StepHeader, Text, Title } from '@/components/ui'
 import { longDate } from '@/lib/dates'
-import { isMultiple, isSingleChoice, missingAnswers } from '@/lib/questions'
-import type { Answer, Question } from '@/lib/types'
+import { KEYBOARD_BEHAVIOR, useRevealField } from '@/lib/keyboard'
+import { isAnswered, isMultiple, isSingleChoice, matchingOptions, missingAnswers } from '@/lib/questions'
+import { questionsLeftNote } from '@/lib/requestCopy'
+import type { Answer, Question, QuestionOption } from '@/lib/types'
 import { useDraft } from '@/state/draft'
 import { goToQuestionStep, useFlowSteps } from '@/state/flow'
-import { colors, radius } from '@/theme'
+import { colors, fonts, radius } from '@/theme'
 
-// Steps 3 and next: the service's questions (admin), one step per screen. A step made of one
-// single-choice question goes on as soon as an answer is touched.
+// Steps 3 and next: the service's questions (admin), one step per screen. A single-choice question
+// is a field over its answers, like the address. The client goes on with « Continuer », like the website.
 export default function QuestionStep() {
   const { step } = useLocalSearchParams<{ step: string }>()
   const index = Number(step ?? 0)
   const { draft, update } = useDraft()
   const { steps, total, isLoading, error, refetch } = useFlowSteps()
   const [tried, setTried] = useState(false)
-  const leaving = useRef(false)
+  // Choice list open, and where each question starts in the scrolled content.
+  const [openKey, setOpenKey] = useState<string | null>(null)
+  const [shownCount, setShownCount] = useState(0)
+  const blockY = useRef<Record<string, number>>({})
+  const { scroll, fieldY } = useRevealField(openKey !== null, shownCount)
 
   const questions = steps[index] ?? []
   const answers = draft.answers
   const setAnswer = (key: string, value: Answer) => update({ answers: { ...answers, [key]: value } })
-  const autoAdvance = questions.length === 1 && (isSingleChoice(questions[0]) || questions[0].type === 'date')
-  const remaining = steps.length - index - 1
 
   const next = () => {
     setTried(true)
@@ -35,12 +40,10 @@ export default function QuestionStep() {
     goToQuestionStep(index + 1, steps.length)
   }
 
-  // Touch an answer -> short pause so the selection is seen, then the next screen.
-  const answerAndGo = (key: string, value: string) => {
+  // An answer touched: shown in its card, the keyboard closes.
+  const pick = (key: string, value: string) => {
+    Keyboard.dismiss()
     setAnswer(key, value)
-    if (!autoAdvance || leaving.current) return
-    leaving.current = true
-    setTimeout(() => { leaving.current = false; goToQuestionStep(index + 1, steps.length) }, 180)
   }
 
   if (isLoading) return <ActivityIndicator color={colors.primary} style={{ flex: 1 }} />
@@ -55,63 +58,66 @@ export default function QuestionStep() {
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: colors.card }}>
-      <ScrollView contentContainerStyle={{ padding: 20, gap: 22 }} keyboardShouldPersistTaps="handled">
-        <StepHeader step={index + 3} total={total} onBack={() => router.back()} />
+      <KeyboardAvoidingView style={{ flex: 1 }} behavior={KEYBOARD_BEHAVIOR}>
+        <ScrollView ref={scroll} contentContainerStyle={{ padding: 20, gap: 22 }} keyboardShouldPersistTaps="handled" keyboardDismissMode="on-drag">
+          <StepHeader step={index + 3} total={total} note={questionsLeftNote(index, steps.length)} onBack={() => router.back()} />
 
-        {draft.service ? (
-          <View style={{ alignSelf: 'flex-start', flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: colors.primaryDim, borderRadius: radius.pill, paddingVertical: 4, paddingRight: 12, paddingLeft: 4 }}>
-            <ServiceIconBadge icon={draft.service.icon} size={24} background={colors.primaryDim} />
-            <Text weight="semibold" style={{ fontSize: 13, color: colors.primaryDark }}>
-              {[draft.service.title, draft.location ? `${draft.location.city} ${draft.location.pincode}` : null].filter(Boolean).join(' · ')}
-            </Text>
-          </View>
-        ) : null}
+          {draft.service ? (
+            <View style={{ alignSelf: 'flex-start', flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: colors.primaryDim, borderRadius: radius.pill, paddingVertical: 4, paddingRight: 12, paddingLeft: 4 }}>
+              <ServiceIconBadge icon={draft.service.icon} size={24} background={colors.primaryDim} />
+              <Text weight="semibold" style={{ fontSize: 13, color: colors.primaryDark }}>
+                {[draft.service.title, draft.location ? `${draft.location.city} ${draft.location.pincode}` : null].filter(Boolean).join(' · ')}
+              </Text>
+            </View>
+          ) : null}
 
-        {questions.map((q) => (
-          <QuestionBlock
-            key={q._id}
-            question={q}
-            answer={answers[q.key]}
-            showHint={autoAdvance}
-            error={tried && missingAnswers([q], answers).length > 0}
-            onAnswer={(value) => setAnswer(q.key, value)}
-            onPick={(value) => answerAndGo(q.key, value)}
-          />
-        ))}
-      </ScrollView>
-      <Footer>
-        {autoAdvance ? (
-          <Text style={{ textAlign: 'center', color: colors.textSecondary, fontSize: 14, paddingVertical: 8 }}>
-            {remaining > 0 ? `Encore ${remaining} question${remaining > 1 ? 's' : ''}, moins d'une minute` : 'Dernière question'}
-          </Text>
-        ) : (
+          {questions.map((q) => (
+            <QuestionBlock
+              key={q._id}
+              question={q}
+              answer={answers[q.key]}
+              error={tried && missingAnswers([q], answers).length > 0}
+              onAnswer={(value) => setAnswer(q.key, value)}
+              onPick={(value) => pick(q.key, value)}
+              onLayout={(y) => { blockY.current[q.key] = y }}
+              onTyping={(open, count) => {
+                if (!open) { setOpenKey((k) => (k === q.key ? null : k)); return }
+                fieldY.current = blockY.current[q.key] ?? 0
+                setOpenKey(q.key)
+                setShownCount(count)
+              }}
+            />
+          ))}
+        </ScrollView>
+        <Footer>
           <Button label="Continuer" onPress={next} />
-        )}
-      </Footer>
+        </Footer>
+      </KeyboardAvoidingView>
     </SafeAreaView>
   )
 }
 
-function QuestionBlock({ question: q, answer, showHint, error, onAnswer, onPick }: {
+function QuestionBlock({ question: q, answer, error, onAnswer, onPick, onLayout, onTyping }: {
   question: Question
   answer: Answer | undefined
-  showHint: boolean
   error: boolean
   onAnswer: (value: Answer) => void
   onPick: (value: string) => void
+  onLayout: (y: number) => void
+  onTyping: (open: boolean, shownCount: number) => void
 }) {
   const options = q.options ?? []
   return (
-    <View style={{ gap: 14 }}>
+    <View style={{ gap: 14 }} onLayout={(e) => onLayout(e.nativeEvent.layout.y)}>
       <View style={{ gap: 6 }}>
         <Title>{q.label}</Title>
-        {showHint ? <Text style={{ color: colors.textMuted, fontSize: 14 }}>Touchez une réponse pour passer à la suite.</Text> : null}
+        {isSingleChoice(q) ? (
+          <Text style={{ color: colors.textMuted, fontSize: 14 }}>Touchez le champ pour voir les réponses.</Text>
+        ) : null}
       </View>
 
       {isSingleChoice(q) ? (
-        <View style={{ gap: 10 }}>
-          {options.map((o) => <OptionButton key={o.value} label={o.label} selected={answer === o.value} onPress={() => onPick(o.value)} />)}
-        </View>
+        <ChoiceField label={q.label} options={options} answer={typeof answer === 'string' ? answer : undefined} error={error} onPick={onPick} onTyping={onTyping} />
       ) : null}
 
       {isMultiple(q) && options.length > 0 ? (
@@ -152,7 +158,121 @@ function QuestionBlock({ question: q, answer, showHint, error, onAnswer, onPick 
         <Text style={{ color: colors.textMuted }}>Cette question n’est pas encore disponible dans l’application.</Text>
       ) : null}
 
-      {error ? <ErrorText>Répondez à cette question pour continuer.</ErrorText> : null}
+      {error && !isSingleChoice(q) ? <ErrorText>Répondez à cette question pour continuer.</ErrorText> : null}
+    </View>
+  )
+}
+
+/**
+ * Single choice, like the home search bar (no magnifier): a field whose answers (set in the admin)
+ * unfold under it once touched, filtered while typing. Once answered, only the answer is shown with « Modifier ».
+ */
+function ChoiceField({ label, options, answer, error, onPick, onTyping }: {
+  label: string
+  options: QuestionOption[]
+  answer: string | undefined
+  error: boolean
+  onPick: (value: string) => void
+  onTyping: (open: boolean, shownCount: number) => void
+}) {
+  const [query, setQuery] = useState('')
+  const [open, setOpen] = useState(false)
+  const [choosing, setChoosing] = useState(!isAnswered(answer))
+  const input = useRef<ComponentRef<typeof TextInput>>(null)
+  const shown = matchingOptions(options, query)
+  const chosen = options.find((o) => o.value === answer)
+
+  // First touch opens the list without the keyboard (it would hide the list); once open, a touch
+  // on the field brings the keyboard to filter.
+  const openList = () => {
+    if (open) { input.current?.focus(); return }
+    setOpen(true)
+    onTyping(true, shown.length)
+  }
+
+  const close = () => {
+    setOpen(false)
+    setQuery('')
+    Keyboard.dismiss()
+    onTyping(false, 0)
+  }
+
+  const pick = (value: string) => {
+    close()
+    setChoosing(false)
+    onPick(value)
+  }
+
+  if (!choosing && chosen) {
+    return (
+      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 14, padding: 16, borderRadius: radius.lg, borderWidth: 2, borderColor: colors.primary, backgroundColor: colors.primaryDim }}>
+        <CheckDot />
+        <Text weight="bold" style={{ flex: 1, fontSize: 16 }}>{chosen.label}</Text>
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel={`Modifier la réponse : ${label}`}
+          onPress={() => setChoosing(true)}
+          hitSlop={8}
+          style={{ flexDirection: 'row', alignItems: 'center', gap: 4, paddingHorizontal: 12, paddingVertical: 8, borderRadius: radius.pill, borderWidth: 1, borderColor: colors.primary, backgroundColor: colors.card }}
+        >
+          <MaterialIcons name="edit" size={16} color={colors.primary} />
+          <Text weight="bold" style={{ color: colors.primary, fontSize: 14 }}>Modifier</Text>
+        </Pressable>
+      </View>
+    )
+  }
+
+  return (
+    <View style={{ gap: 8 }}>
+      <Pressable
+        onPress={openList}
+        accessibilityLabel={`Ouvrir la liste des réponses : ${label}`}
+        style={{ flexDirection: 'row', alignItems: 'center', gap: 10, height: 54, paddingHorizontal: 16, borderRadius: radius.md, backgroundColor: colors.card, ...fieldBorder(open, error) }}
+      >
+        {open ? (
+          <TextInput
+            ref={input}
+            value={query}
+            onChangeText={(t) => { setQuery(t); onTyping(true, matchingOptions(options, t).length) }}
+            placeholder="Rechercher une réponse"
+            placeholderTextColor={colors.textMuted}
+            accessibilityLabel={label}
+            autoCorrect={false}
+            style={{ flex: 1, alignSelf: 'stretch', fontFamily: fonts.regular, fontSize: 15, color: colors.text }}
+          />
+        ) : (
+          <Text numberOfLines={1} style={{ flex: 1, color: colors.textMuted }}>Rechercher une réponse</Text>
+        )}
+        {open ? (
+          <Pressable accessibilityRole="button" accessibilityLabel="Fermer la liste" onPress={close} hitSlop={8}>
+            <MaterialIcons name="close" size={22} color={colors.textMuted} />
+          </Pressable>
+        ) : (
+          <MaterialIcons name="expand-more" size={24} color={colors.textMuted} />
+        )}
+      </Pressable>
+      {error ? <ErrorText>Choisissez une réponse dans la liste.</ErrorText> : null}
+
+      {open ? (
+        <View style={{ padding: 6, borderRadius: radius.lg, borderWidth: 1, borderColor: colors.border, backgroundColor: colors.card }}>
+          {shown.map((o) => {
+            const selected = o.value === answer
+            return (
+              <Pressable
+                key={o.value}
+                accessibilityRole="button"
+                accessibilityState={{ selected }}
+                onPress={() => pick(o.value)}
+                style={({ pressed }) => ({ flexDirection: 'row', alignItems: 'center', gap: 12, padding: 10, borderRadius: radius.sm, backgroundColor: pressed || selected ? colors.primaryDim : 'transparent' })}
+              >
+                <Text weight="semibold" style={{ flex: 1, fontSize: 16 }}>{o.label}</Text>
+                {selected ? <CheckDot /> : <MaterialIcons name="chevron-right" size={20} color={colors.textMuted} />}
+              </Pressable>
+            )
+          })}
+          {shown.length === 0 ? <Text style={{ color: colors.textMuted, padding: 10 }}>Aucune réponse ne correspond.</Text> : null}
+        </View>
+      ) : null}
     </View>
   )
 }
