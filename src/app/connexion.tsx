@@ -9,7 +9,7 @@ import { CODE_LENGTH, CodeInput } from '@/components/CodeInput'
 import { GoogleButton, SwitchAuthLink } from '@/components/GoogleButton'
 import { ResendCode } from '@/components/ResendCode'
 import { Button, ErrorText, Field, Footer, IconButton, Text, Title } from '@/components/ui'
-import { loginCodeFailure, loginRefusal, NO_ACCOUNT } from '@/lib/auth'
+import { afterCodeRequest, loginCodeFailure, loginRefusal, NO_ACCOUNT } from '@/lib/auth'
 import { isValidEmail } from '@/lib/contact'
 import { KEYBOARD_BEHAVIOR } from '@/lib/keyboard'
 import { useSession } from '@/state/session'
@@ -46,10 +46,11 @@ export default function SignIn() {
     setBusy(true)
     const failure = await sendCode()
     setBusy(false)
-    // No account: shown in its own notice above the field (like the website), not as an error.
-    setNoAccount(failure === NO_ACCOUNT)
-    if (failure && failure !== NO_ACCOUNT) setError(failure)
-    else setStep('code')
+    // No account: only the notice above the field (like the website), no code step.
+    const next = afterCodeRequest(failure)
+    setNoAccount(next.noAccount)
+    setError(next.error)
+    setStep(next.step)
   }
 
   const verify = async (value = code) => {

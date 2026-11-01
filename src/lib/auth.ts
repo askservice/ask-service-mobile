@@ -14,3 +14,14 @@ export function loginCodeFailure(res: { status: number; body: { message?: string
   if (flow === 'NO_ACCOUNT') return NO_ACCOUNT
   return res.status >= 400 ? res.body.message || 'Le code n’a pas pu être envoyé.' : null
 }
+
+/**
+ * Sign-in screen after asking for a code. Code sent: the code step. No client account: stay on
+ * the e-mail with only the "Créer un compte" notice (no error, no code boxes). Other refusal:
+ * stay on the e-mail with the error.
+ */
+export function afterCodeRequest(failure: string | null): { step: 'email' | 'code'; noAccount: boolean; error: string | null } {
+  if (!failure) return { step: 'code', noAccount: false, error: null }
+  if (failure === NO_ACCOUNT) return { step: 'email', noAccount: true, error: null }
+  return { step: 'email', noAccount: false, error: failure }
+}
