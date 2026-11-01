@@ -98,7 +98,7 @@ export default function SignIn() {
                 onSubmitEditing={askCode}
               />
               {/* Under the email field, before the "ou" of Google, like the sign-up screen. */}
-              <Button label="Continuer" trailingIcon="arrow-forward" onPress={askCode} loading={busy} />
+              <Button label="Recevoir un code" trailingIcon="arrow-forward" onPress={askCode} loading={busy} />
               {error ? <ErrorText>{error}</ErrorText> : null}
               {noAccount ? <Button label="Créer un compte" variant="outline" onPress={toSignUp} /> : null}
               <GoogleButton busy={busy} onBusy={setBusy} onError={setError} />
