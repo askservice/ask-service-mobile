@@ -4,19 +4,25 @@ import type { Service, ServiceGroup } from './types'
 
 /** Popular services shown as tiles, in the owner's order (admin service ids, same list as the
  *  website's src/data/servicePages.ts; the last two come from the backend catalogue of 2026-11). */
-export const POPULAR_SERVICE_IDS = [
-  '6a8984db0da7e0b8cef4d63c', // Nettoyage & Ménage
-  '6a897ce91750c974fffdb85a', // Sécurité privée & Gardiennage
-  '6a8985230da7e0b8cef4d64b', // Jardinage & Aménagement paysager
-  '6a8990fc4bc5d9a73268df6b', // Plomberie & Chauffage
-  '6ae73580a8547c669d33980c', // Électricité
-  '6ae73580a8547c669d33980b', // Désinsectisation & Dératisation
+/** `label`: short name on the tile (the full admin titles take 2 or 3 lines in a tile). */
+export const POPULAR_SERVICES: { id: string; label: string }[] = [
+  { id: '6a8984db0da7e0b8cef4d63c', label: 'Nettoyage' }, // Nettoyage & Ménage
+  { id: '6a897ce91750c974fffdb85a', label: 'Sécurité privée' }, // Sécurité privée & Gardiennage
+  { id: '6a8985230da7e0b8cef4d64b', label: 'Jardinage' }, // Jardinage & Aménagement paysager
+  { id: '6a8990fc4bc5d9a73268df6b', label: 'Plomberie' }, // Plomberie & Chauffage
+  { id: '6ae73580a8547c669d33980c', label: 'Électricité' }, // Électricité
+  { id: '6ae73580a8547c669d33980b', label: 'Nuisibles' }, // Désinsectisation & Dératisation
 ]
 
-/** The popular services still in the catalogue, in the tiles' order. */
-export function popularServices(groups: ServiceGroup[] | undefined): Service[] {
+export type TileService = Service & { tileLabel: string }
+
+/** The popular services still in the catalogue, in the tiles' order, with their short tile name. */
+export function popularServices(groups: ServiceGroup[] | undefined): TileService[] {
   const all = (groups ?? []).flatMap((g) => g.child_categories)
-  return POPULAR_SERVICE_IDS.map((id) => all.find((s) => s._id === id)).filter((s): s is Service => Boolean(s))
+  return POPULAR_SERVICES.flatMap(({ id, label }) => {
+    const service = all.find((s) => s._id === id)
+    return service ? [{ ...service, tileLabel: label }] : []
+  })
 }
 
 /** « Comment ça marche », the texts validated for the website's service pages. */

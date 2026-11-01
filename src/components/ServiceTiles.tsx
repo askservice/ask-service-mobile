@@ -2,6 +2,7 @@ import MaterialIcons from '@expo/vector-icons/MaterialIcons'
 import { Pressable, View } from 'react-native'
 
 import type { Service } from '@/lib/types'
+import type { TileService } from '@/lib/requestCopy'
 import { colors, radius } from '@/theme'
 
 import { ServiceIconBadge } from './ServiceIcon'
@@ -12,7 +13,7 @@ import { CheckDot, Text } from './ui'
  * like the website's request form.
  */
 export function ServiceTiles({ services, selectedId, onPick, onSearch }: {
-  services: Service[]
+  services: TileService[]
   selectedId?: string
   onPick: (service: Service) => void
   onSearch: () => void
@@ -44,7 +45,7 @@ export function ServiceTiles({ services, selectedId, onPick, onSearch }: {
             >
               {selected ? <View style={{ position: 'absolute', top: 8, right: 8 }}><CheckDot /></View> : null}
               <ServiceIconBadge icon={s.icon} size={44} />
-              <Text weight="bold" style={{ fontSize: 15, textAlign: 'center' }}>{s.title}</Text>
+              <Text weight="bold" style={{ fontSize: 15, textAlign: 'center' }}>{s.tileLabel}</Text>
             </Pressable>
           )
         })}
