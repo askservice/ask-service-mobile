@@ -97,6 +97,9 @@ export default function SignIn() {
                 textContentType="emailAddress"
                 onSubmitEditing={askCode}
               />
+              {/* Under the email field, before the "ou" of Google, like the sign-up screen. */}
+              <Button label="Recevoir un code" trailingIcon="arrow-forward" onPress={askCode} loading={busy} />
+              {error ? <ErrorText>{error}</ErrorText> : null}
               {noAccount ? <Button label="Créer un compte" variant="outline" onPress={toSignUp} /> : null}
               <GoogleButton busy={busy} onBusy={setBusy} onError={setError} />
               <SwitchAuthLink question="Pas encore de compte ?" action="Créer un compte" onPress={toSignUp} />
@@ -113,15 +116,15 @@ export default function SignIn() {
               </View>
               <CodeInput value={code} onChange={setCode} onComplete={verify} />
               <ResendCode send={sendCode} onResult={setError} />
+              {error ? <ErrorText>{error}</ErrorText> : null}
             </>
           )}
-          {error ? <ErrorText>{error}</ErrorText> : null}
         </ScrollView>
-        <Footer>
-          {step === 'email'
-            ? <Button label="Recevoir un code" onPress={askCode} loading={busy} />
-            : <Button label="Se connecter" onPress={() => verify()} loading={busy} />}
-        </Footer>
+        {step === 'code' ? (
+          <Footer>
+            <Button label="Se connecter" onPress={() => verify()} loading={busy} />
+          </Footer>
+        ) : null}
       </KeyboardAvoidingView>
     </SafeAreaView>
   )
