@@ -1,6 +1,7 @@
+import MaterialIcons from '@expo/vector-icons/MaterialIcons'
 import { router, useLocalSearchParams } from 'expo-router'
 import { useState } from 'react'
-import { KeyboardAvoidingView, ScrollView, View } from 'react-native'
+import { KeyboardAvoidingView, Pressable, ScrollView, View } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 
 import { sendLoginCode, verifyLoginCode } from '@/api/requests'
@@ -12,7 +13,7 @@ import { loginCodeFailure, loginRefusal, NO_ACCOUNT } from '@/lib/auth'
 import { isValidEmail } from '@/lib/contact'
 import { KEYBOARD_BEHAVIOR } from '@/lib/keyboard'
 import { useSession } from '@/state/session'
-import { colors } from '@/theme'
+import { colors, radius } from '@/theme'
 
 const NETWORK_ERROR = 'Connexion impossible. Vérifiez votre réseau et réessayez.'
 
@@ -45,8 +46,9 @@ export default function SignIn() {
     setBusy(true)
     const failure = await sendCode()
     setBusy(false)
+    // No account: shown in its own notice above the field (like the website), not as an error.
     setNoAccount(failure === NO_ACCOUNT)
-    if (failure) setError(failure)
+    if (failure && failure !== NO_ACCOUNT) setError(failure)
     else setStep('code')
   }
 
@@ -86,6 +88,7 @@ export default function SignIn() {
                   Saisissez l’e-mail utilisé pour votre demande : nous vous envoyons un code de connexion. Pas de mot de passe à retenir.
                 </Text>
               </View>
+              {noAccount ? <NoAccountNotice onSignUp={toSignUp} /> : null}
               <Field
                 label="Adresse e-mail"
                 value={email}
@@ -100,7 +103,6 @@ export default function SignIn() {
               {/* Under the email field, before the "ou" of Google, like the sign-up screen. */}
               <Button label="Recevoir un code" trailingIcon="arrow-forward" onPress={askCode} loading={busy} />
               {error ? <ErrorText>{error}</ErrorText> : null}
-              {noAccount ? <Button label="Créer un compte" variant="outline" onPress={toSignUp} /> : null}
               <GoogleButton busy={busy} onBusy={setBusy} onError={setError} />
               <SwitchAuthLink question="Pas encore de compte ?" action="Créer un compte" onPress={toSignUp} />
             </>
@@ -127,5 +129,40 @@ export default function SignIn() {
         ) : null}
       </KeyboardAvoidingView>
     </SafeAreaView>
+  )
+}
+
+// Same notice as the website's login page: message + "Créer un compte", above the e-mail field.
+function NoAccountNotice({ onSignUp }: { onSignUp: () => void }) {
+  return (
+    <View
+      style={{
+        gap: 12,
+        padding: 14,
+        borderRadius: radius.sm,
+        borderWidth: 1,
+        borderColor: `${colors.primary}40`,
+        backgroundColor: colors.primaryDim,
+      }}
+    >
+      <View style={{ flexDirection: 'row', gap: 10, alignItems: 'flex-start' }}>
+        <MaterialIcons name="error-outline" size={18} color={colors.primary} style={{ marginTop: 1 }} />
+        <Text weight="semibold" style={{ flex: 1, fontSize: 14, lineHeight: 20 }}>{NO_ACCOUNT}</Text>
+      </View>
+      <Pressable
+        accessibilityRole="button"
+        onPress={onSignUp}
+        style={({ pressed }) => ({
+          alignSelf: 'flex-start',
+          paddingHorizontal: 16,
+          paddingVertical: 9,
+          borderRadius: radius.sm,
+          backgroundColor: colors.primary,
+          opacity: pressed ? 0.85 : 1,
+        })}
+      >
+        <Text weight="semibold" style={{ fontSize: 14, color: colors.white }}>Créer un compte</Text>
+      </Pressable>
+    </View>
   )
 }
