@@ -6,7 +6,7 @@ import { colors } from '@/theme'
 
 type IconName = ComponentProps<typeof MaterialIcons>['name']
 
-// Icon chosen for each service in the admin (field `icon`): same 28 keys as the backend
+// Icon chosen for each service in the admin (field `icon`): same 30 keys as the backend
 // (utils/serviceIcons.js), the admin picker and the website.
 export const SERVICE_ICONS: Record<string, IconName> = {
   nettoyage: 'cleaning-services',
@@ -16,6 +16,8 @@ export const SERVICE_ICONS: Record<string, IconName> = {
   peinture: 'format-paint',
   securite: 'security',
   electricite: 'electrical-services',
+  nuisibles: 'pest-control',
+  debarras: 'delete-sweep',
   bricolage: 'handyman',
   renovation: 'construction',
   menuiserie: 'carpenter',
