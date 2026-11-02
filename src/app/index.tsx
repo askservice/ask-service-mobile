@@ -15,7 +15,7 @@ import { Button, ErrorText, fieldBorder, Text } from '@/components/ui'
 import { useRevealField } from '@/lib/keyboard'
 import { popularServices, TRUST_POINTS } from '@/lib/requestCopy'
 import { isOngoing } from '@/lib/requests'
-import { matchesSearch } from '@/lib/search'
+import { matchesServiceSearch } from '@/lib/search'
 import type { Service } from '@/lib/types'
 import { useDraft } from '@/state/draft'
 import { useSession } from '@/state/session'
@@ -37,7 +37,7 @@ export default function Home() {
   const input = useRef<ComponentRef<typeof TextInput>>(null)
 
   const shownGroups = (groups ?? [])
-    .map((g) => ({ ...g, child_categories: g.child_categories.filter((s) => matchesSearch(s.title, search)) }))
+    .map((g) => ({ ...g, child_categories: g.child_categories.filter((s) => matchesServiceSearch(s, search)) }))
     .filter((g) => g.child_categories.length > 0)
   // List open: field moved to the top, so the list stays above the keyboard.
   const { scroll, onFieldLayout } = useRevealField(open, shownGroups.length)

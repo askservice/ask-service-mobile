@@ -11,7 +11,7 @@ import { ServiceTiles } from '@/components/ServiceTiles'
 import { Button, CheckDot, ErrorText, fieldBorder, Footer, StepHeader, Text, Title } from '@/components/ui'
 import { KEYBOARD_BEHAVIOR, useRevealField } from '@/lib/keyboard'
 import { popularServices } from '@/lib/requestCopy'
-import { matchesSearch } from '@/lib/search'
+import { matchesServiceSearch } from '@/lib/search'
 import type { ClientType, Service } from '@/lib/types'
 import { useDraft } from '@/state/draft'
 import { useFlowSteps } from '@/state/flow'
@@ -39,7 +39,7 @@ export default function ServiceStep() {
   const tiles = popularServices(groups)
 
   const shownGroups = (groups ?? [])
-    .map((g) => ({ ...g, child_categories: g.child_categories.filter((s) => matchesSearch(s.title, search)) }))
+    .map((g) => ({ ...g, child_categories: g.child_categories.filter((s) => matchesServiceSearch(s, search)) }))
     .filter((g) => g.child_categories.length > 0)
 
   const missingService = tried && !draft.service
