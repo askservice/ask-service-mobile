@@ -5,6 +5,8 @@ export type Service = {
   _id: string
   title: string
   icon?: string | null
+  /** Search keywords set in the admin (lib/search.ts). */
+  keywords?: string[]
   display_order?: number
 }
 
