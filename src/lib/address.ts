@@ -50,9 +50,16 @@ export function searchAddress(query: string, signal?: AbortSignal): Promise<Addr
   return features(`${GEOCODING_URL}/search?${new URLSearchParams({ q, limit: '5', autocomplete: '1' })}`, signal)
 }
 
-/** Address at the phone's position. */
+// The geocoder only looks right next to the point by default: a phone position, often a few
+// dozen metres off (middle of a block, a courtyard, a park), then finds nothing. The nearest
+// address within this radius (the service's maximum) is taken instead, nearest first.
+export const REVERSE_RADIUS_M = 500
+
+/** Nearest address to the phone's position (within REVERSE_RADIUS_M), or null. */
 export async function addressAt(latitude: number, longitude: number): Promise<AddressSuggestion | null> {
-  const list = await features(`${GEOCODING_URL}/reverse?${new URLSearchParams({ lat: String(latitude), lon: String(longitude), limit: '1' })}`)
+  const searchgeom = JSON.stringify({ type: 'Circle', coordinates: [longitude, latitude], radius: REVERSE_RADIUS_M })
+  const params = new URLSearchParams({ lat: String(latitude), lon: String(longitude), limit: '1', searchgeom })
+  const list = await features(`${GEOCODING_URL}/reverse?${params}`)
   return list[0] ?? null
 }
 

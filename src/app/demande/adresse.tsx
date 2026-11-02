@@ -8,7 +8,8 @@ import { SafeAreaView } from 'react-native-safe-area-context'
 
 import { useProfile } from '@/api/me'
 import { Button, ErrorText, fieldBorder, Footer, StepHeader, Text, Title } from '@/components/ui'
-import { addressAt, profileAddressQuery, searchAddress, type AddressSuggestion } from '@/lib/address'
+import { profileAddressQuery, searchAddress, type AddressSuggestion } from '@/lib/address'
+import { addressAtMyPosition, POSITION_MESSAGES } from '@/lib/position'
 import { KEYBOARD_BEHAVIOR, useRevealField } from '@/lib/keyboard'
 import { useDraft } from '@/state/draft'
 import { goToQuestionStep, useFlowSteps } from '@/state/flow'
@@ -61,14 +62,11 @@ export default function AddressStep() {
     setPositionError(null)
     setLocating(true)
     try {
-      const { granted } = await ExpoLocation.requestForegroundPermissionsAsync()
-      if (!granted) { setPositionError('Autorisez la localisation, ou saisissez votre adresse.'); return }
-      const { coords } = await ExpoLocation.getCurrentPositionAsync({ accuracy: ExpoLocation.Accuracy.Balanced })
-      const found = await addressAt(coords.latitude, coords.longitude)
-      if (found) choose(found)
-      else setPositionError('Adresse introuvable à votre position. Saisissez-la.')
+      const result = await addressAtMyPosition(ExpoLocation)
+      if (result.ok) choose(result.address)
+      else setPositionError(POSITION_MESSAGES[result.reason])
     } catch {
-      setPositionError('Position indisponible. Saisissez votre adresse.')
+      setPositionError(POSITION_MESSAGES.unavailable)
     } finally {
       setLocating(false)
     }
