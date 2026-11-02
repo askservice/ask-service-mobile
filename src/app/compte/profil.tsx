@@ -8,7 +8,7 @@ import { SafeAreaView } from 'react-native-safe-area-context'
 
 import { updateProfile, useMeAction, useProfile } from '@/api/me'
 import { Button, ErrorText, Field, Footer, IconButton, Text, Title } from '@/components/ui'
-import { addressAt } from '@/lib/address'
+import { addressAtMyPosition, POSITION_MESSAGES } from '@/lib/position'
 import { KEYBOARD_BEHAVIOR, useScrollToEndOnFocus } from '@/lib/keyboard'
 import { profileErrors, profileForm, profileUpdate, type ProfileForm } from '@/lib/profile'
 import type { Profile } from '@/lib/types'
@@ -45,16 +45,14 @@ function ProfileEditor({ profile: p }: { profile: Profile }) {
     setLocateError(null)
     setLocating(true)
     try {
-      const { granted } = await ExpoLocation.requestForegroundPermissionsAsync()
-      if (!granted) { setLocateError('Autorisez la localisation, ou saisissez votre adresse.'); return }
-      const { coords } = await ExpoLocation.getCurrentPositionAsync({ accuracy: ExpoLocation.Accuracy.Balanced })
-      const found = await addressAt(coords.latitude, coords.longitude)
-      if (!found) { setLocateError('Adresse introuvable à votre position. Saisissez-la.'); return }
+      const result = await addressAtMyPosition(ExpoLocation)
+      if (!result.ok) { setLocateError(POSITION_MESSAGES[result.reason]); return }
+      const found = result.address
       // title = street part ("12 Rue de la Paix"), or the town when no street was found there.
       const street = found.title === found.location.city ? form.address : found.title
       setForm({ ...form, address: street, postcode: found.location.pincode, city: found.location.city })
     } catch {
-      setLocateError('Position indisponible. Saisissez votre adresse.')
+      setLocateError(POSITION_MESSAGES.unavailable)
     } finally {
       setLocating(false)
     }
