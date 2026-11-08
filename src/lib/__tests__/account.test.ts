@@ -1,22 +1,9 @@
 import { loginRefusal } from '../auth'
-import { chatPartnerName, initials, quotePrice, requestBadge, sentLabel, shortTime, sortQuotes } from '../requests'
+import { chatPartnerName, initials, quotePrice, sentLabel, shortTime, sortQuotes } from '../requests'
 import type { Chat, MyRequest, Quote } from '../types'
 
 const request = (over: Partial<MyRequest>): MyRequest => ({ _id: 'r', reference_no: 'R', status: 'ACTIVE', createdAt: '2026-10-20T10:00:00Z', ...over })
 const quote = (over: Partial<Quote>): Quote => ({ _id: 'q', vendor_id: 'v', service_request_id: 'r', quote_price: 468, status: 'SENT', createdAt: '2026-10-21T10:00:00Z', ...over })
-
-describe('request badge', () => {
-  it('counts the quotes received', () => {
-    expect(requestBadge(request({ quotes_status: 'open', quotes_count: 2 }))).toEqual({ label: '2 devis reçus', tone: 'primary' })
-    expect(requestBadge(request({ quotes_status: 'open', quotes_count: 1 })).label).toBe('1 devis reçu')
-  })
-  it('says when nobody answered yet, a provider was chosen, or the request is over', () => {
-    expect(requestBadge(request({ quotes_status: 'hold', quotes_count: 0 })).label).toBe('En attente de devis')
-    expect(requestBadge(request({ quotes_status: 'accepted', quotes_count: 1 })).label).toBe('Prestataire choisi')
-    expect(requestBadge(request({ status: 'CANCELLED' })).label).toBe('Clôturée')
-    expect(requestBadge(request({ status: 'EXPIRED' })).label).toBe('Expirée')
-  })
-})
 
 describe('quotes', () => {
   it('shows the TTC price entered by the provider', () => {

@@ -84,6 +84,8 @@ export type Quote = {
   price_display?: string
   service_description?: string
   available_start_date?: string
+  /** Days the quote stays valid after it was sent. */
+  quote_valid_days?: number
   /** A file is joined by the provider (read with GET …/quotes/:quoteId/attachment). */
   has_attachment?: boolean
   status: QuoteStatus
@@ -109,6 +111,9 @@ export type MyRequest = {
   quotes_status?: string
   quotes_count?: number
   new_quotes_count?: number
+  /** Pros who unlocked the request (they have the client's contact), and the max per request. */
+  pros_contacted_count?: number
+  pros_limit?: number
   accepted_quote_message?: string | null
   accepted_quote_sub_message?: string | null
   dynamic_answers?: { key: string; label: string; value: string }[] | null
