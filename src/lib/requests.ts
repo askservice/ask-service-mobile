@@ -7,15 +7,55 @@ export const requestTitle = (r: MyRequest) => requestService(r)?.title ?? 'Deman
 
 export const isOngoing = (r: MyRequest) => r.status === 'ACTIVE'
 
-export type Badge = { label: string; tone: 'primary' | 'neutral' | 'success' | 'muted' }
+export type RequestStep = 1 | 2 | 3 | 4
 
-/** Badge of a request in the list, from the quotes summary the API computes. */
+export type RequestProgress = {
+  /** Current step of the 4-step tracker (Envoyée, Pros, Devis reçus, Vous choisissez). */
+  step: RequestStep
+  label: string
+  tone: 'action' | 'waiting' | 'done' | 'closed'
+  finished: boolean
+}
+
+// Same logic as the website (front src/utils/clientRequests.ts). Fields of /user/get-created-services:
+// quotes_status hold | open | accepted | ignore | closed, quotes_count = quotes waiting for an answer.
+export const STEP_LABELS = ['Demande envoyée', 'Les pros vous contactent', 'Devis reçus', 'Vous choisissez'] as const
+
+/** Label of step 2 from the number of pros who have the client's contact (pros_contacted_count). */
+export function prosStepLabel(count?: number | null): string {
+  if (count == null) return STEP_LABELS[1]
+  if (count <= 0) return 'Les pros consultent votre demande'
+  return count === 1 ? '1 pro a vos coordonnées' : `${count} pros ont vos coordonnées`
+}
+
+/** The 4 tracker labels, step 2 with the number of pros when the API sends it. */
+export const stepLabels = (prosCount?: number | null): string[] => [STEP_LABELS[0], prosStepLabel(prosCount), STEP_LABELS[2], STEP_LABELS[3]]
+
+export function requestProgress(r: MyRequest): RequestProgress {
+  const qs = (r.quotes_status ?? '').toLowerCase()
+  if (!isOngoing(r) || qs === 'closed') return { step: 4, label: 'Terminée', tone: 'closed', finished: true }
+  if (qs === 'accepted') return { step: 4, label: 'Devis accepté', tone: 'done', finished: false }
+  const waiting = r.quotes_count ?? 0
+  if (qs === 'open' && waiting > 0) {
+    return { step: 3, label: waiting > 1 ? `${waiting} devis à comparer` : '1 devis à étudier', tone: 'action', finished: false }
+  }
+  if (qs === 'ignore') return { step: 2, label: 'En attente d’autres devis', tone: 'waiting', finished: false }
+  return { step: 2, label: 'En attente de devis', tone: 'waiting', finished: false }
+}
+
+/** First request with quotes waiting for the client's answer, for the blue banner. */
+export const requestToCompare = (requests: MyRequest[]) => requests.find((r) => requestProgress(r).tone === 'action')
+
+export type Badge = { label: string; tone: 'primary' | 'neutral' | 'success' | 'muted'; line?: string }
+
+/** Pill and status line of a request card. */
 export function requestBadge(r: MyRequest): Badge {
-  if (!isOngoing(r)) return { label: r.status === 'EXPIRED' ? 'Expirée' : 'Clôturée', tone: 'muted' }
-  if (r.quotes_status === 'accepted') return { label: 'Prestataire choisi', tone: 'success' }
-  const count = r.quotes_count ?? 0
-  if (count > 0) return { label: `${count} devis reçu${count > 1 ? 's' : ''}`, tone: 'primary' }
-  return { label: 'En attente de devis', tone: 'neutral' }
+  const progress = requestProgress(r)
+  if (progress.tone === 'closed') return { label: r.status === 'EXPIRED' ? 'Expirée' : 'Clôturée', tone: 'muted', line: 'Demande terminée' }
+  if (progress.tone === 'done') return { label: 'Devis accepté', tone: 'success', line: 'Vous avez choisi votre professionnel' }
+  if (progress.tone === 'action') return { label: `${r.quotes_count} devis`, tone: 'primary', line: 'Devis reçus · à vous de choisir' }
+  const pros = r.pros_contacted_count
+  return { label: 'En attente', tone: 'neutral', line: pros && pros > 0 ? `${prosStepLabel(pros)} · devis à venir` : prosStepLabel(pros) }
 }
 
 const PRICE = new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'EUR', maximumFractionDigits: 2 })
