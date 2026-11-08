@@ -30,9 +30,13 @@ la messagerie.
 
 ```bash
 npm ci
-npx expo start            # QR code à scanner avec Expo Go (Android / iOS)
-npx expo start --tunnel   # si le téléphone n'est pas sur le même réseau que l'ordinateur
+npx expo start --tunnel --dev-client   # avec l'app de développement installée sur le téléphone
+npx expo start --tunnel --go           # ou avec Expo Go (connexion Google indisponible)
 ```
+
+App de développement (une fois, puis à refaire seulement quand une dépendance native change) :
+`eas build --profile development --platform android`, installer l'APK donné par EAS, l'ouvrir
+(écran « Development Build ») et y scanner le QR code de `npx expo start --dev-client`.
 
 API utilisée : `https://api.askservice.fr` par défaut. Pour une autre API, créer un fichier `.env` :
 
@@ -40,8 +44,32 @@ API utilisée : `https://api.askservice.fr` par défaut. Pour une autre API, cr�
 EXPO_PUBLIC_API_URL=http://192.168.1.20:4000
 ```
 
+Builds EAS : l'API est fixée par profil dans `eas.json` (`production` → `https://api.askservice.fr`,
+`development` et `preview` → `https://api-dev.askservice.fr`), quel que soit le `.env` du poste.
+
 Attention : avec l'API de production, tout est réel : une demande envoyée prévient les prestataires
 (SMS envoyé), accepter ou refuser un devis prévient le prestataire.
+
+## Mises à jour à distance (EAS Update)
+
+Une modification **uniquement JavaScript** (écrans, textes, logique) peut être envoyée aux apps
+installées sans nouveau build ni examen des stores, depuis la branche `prod` :
+
+```bash
+eas update --channel production --message "Ce qui change"
+```
+
+L'app télécharge la mise à jour au démarrage et l'applique au démarrage suivant. Elle ne va qu'aux
+apps de la même version (`runtimeVersion` = `version` de `app.json`).
+
+Nouveau build obligatoire (et nouvel examen) dès qu'on change la partie native : ajout ou mise à
+jour d'une bibliothèque native, permission, icône, `app.json` (plugins), montée de version d'Expo.
+Dans ce cas, **augmenter `version`** dans `app.json` (ex. 1.1.0 → 1.2.0) pour qu'une mise à jour
+JavaScript ne soit jamais envoyée à une app dont le code natif ne correspond pas.
+
+Android : les builds de production sont réduits par R8 (`expo-build-properties`). Après un build,
+tester en test interne : connexion par code et Google, demande, « Utiliser ma position », devis,
+messages, fichier joint.
 
 ## Vérifications
 

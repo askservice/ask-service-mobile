@@ -2,7 +2,13 @@
   "expo": {
     "name": "Ask Service",
     "slug": "ask-service-mobile",
-    "version": "1.0.0",
+    "version": "1.1.0",
+    "runtimeVersion": {
+      "policy": "appVersion"
+    },
+    "updates": {
+      "url": "https://u.expo.dev/5d0e0d8a-0e56-4165-90e1-4c980130e836"
+    },
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
     "scheme": "askservice",
@@ -44,7 +50,16 @@
         }
       ],
       "@react-native-google-signin/google-signin",
-      "expo-apple-authentication"
+      "expo-apple-authentication",
+      [
+        "expo-build-properties",
+        {
+          "android": {
+            "enableMinifyInReleaseBuilds": true,
+            "enableShrinkResourcesInReleaseBuilds": true
+          }
+        }
+      ]
     ],
     "experiments": {
       "typedRoutes": true,
