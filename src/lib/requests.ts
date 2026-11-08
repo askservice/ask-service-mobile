@@ -72,12 +72,6 @@ export function providerName(q: Quote): string {
 export const initials = (name: string) =>
   name.split(/\s+/).filter(Boolean).slice(0, 2).map((w) => w[0]?.toUpperCase()).join('') || '?'
 
-/** Quotes of the detail screen: the accepted one first, then the newest. */
-export function sortQuotes(quotes: Quote[]): Quote[] {
-  const rank = (q: Quote) => (q.status === 'ACCEPTED' ? 0 : q.status === 'IGNORED' ? 2 : 1)
-  return [...quotes].sort((a, b) => rank(a) - rank(b) || Date.parse(b.createdAt) - Date.parse(a.createdAt))
-}
-
 /** The other person of a conversation (the provider, for a client). */
 export function chatPartner(chat: Chat): ChatUser | null {
   return chat.users?.find((u) => !u.itsMe) ?? chat.users?.[0] ?? null
@@ -115,4 +109,78 @@ export function sentLabel(iso: string, now = new Date()): string {
   const t = shortTime(iso, now)
   if (t === 'hier') return 'envoyée hier'
   return t.includes(':') ? 'envoyée aujourd’hui' : `envoyée le ${t}`
+}
+
+// Quotes of a request (lot A2, mockups A4-A6; same rules as the website lot C3)
+
+export const isPendingQuote = (q: Quote) => (q.status ?? '').toUpperCase() === 'SENT'
+
+const priceOf = (q: Quote) => Number(q.quote_price ?? q.price ?? 0) || 0
+const time = (iso?: string | null) => (iso ? new Date(iso).getTime() || 0 : 0)
+
+/** Last day the quote is valid: sent date + validity in days (not the start date). */
+export function quoteValidUntil(q: Quote): Date | null {
+  if (!q.createdAt || !q.quote_valid_days) return null
+  const d = new Date(q.createdAt)
+  if (Number.isNaN(d.getTime())) return null
+  d.setDate(d.getDate() + q.quote_valid_days)
+  return d
+}
+
+export type QuoteSort = 'price' | 'start' | 'recent'
+
+export const QUOTE_SORTS: { key: QuoteSort; label: string }[] = [
+  { key: 'price', label: 'Prix' },
+  { key: 'start', label: 'Date de début' },
+  { key: 'recent', label: 'Plus récents' },
+]
+
+/** Pending quotes in the order the client picked (no start date = last when sorting by start). */
+export function sortQuotesBy(quotes: Quote[], sort: QuoteSort): Quote[] {
+  const list = [...quotes]
+  if (sort === 'price') return list.sort((a, b) => priceOf(a) - priceOf(b))
+  if (sort === 'start') return list.sort((a, b) => (time(a.available_start_date) || Infinity) - (time(b.available_start_date) || Infinity))
+  return list.sort((a, b) => time(b.createdAt) - time(a.createdAt))
+}
+
+/** Ids of the cheapest and earliest-start pending quotes, for their badges (only with 2+ quotes). */
+export function quoteBadges(quotes: Quote[]): { cheapest?: string; earliest?: string } {
+  const pending = quotes.filter(isPendingQuote)
+  if (pending.length < 2) return {}
+  const cheapest = sortQuotesBy(pending, 'price')[0]
+  const withStart = pending.filter((q) => time(q.available_start_date))
+  const earliest = withStart.length ? sortQuotesBy(withStart, 'start')[0] : undefined
+  return { cheapest: cheapest._id, earliest: earliest && earliest._id !== cheapest._id ? earliest._id : undefined }
+}
+
+const SHORT_MONTHS = ['janv.', 'févr.', 'mars', 'avr.', 'mai', 'juin', 'juil.', 'août', 'sept.', 'oct.', 'nov.', 'déc.']
+const LONG_MONTHS = ['janvier', 'février', 'mars', 'avril', 'mai', 'juin', 'juillet', 'août', 'septembre', 'octobre', 'novembre', 'décembre']
+
+/** "9 nov." or, long, "9 novembre". */
+export function dayMonth(date: Date | string, long = false): string {
+  const d = typeof date === 'string' ? new Date(date) : date
+  return `${d.getDate()} ${(long ? LONG_MONTHS : SHORT_MONTHS)[d.getMonth()]}`
+}
+
+const sameDay = (a: Date, b: Date) => a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate()
+
+/** "Dès aujourd'hui · valable jusqu'au 22 nov.", parts left out when the provider did not set them. */
+export function quoteDatesLine(q: Quote, now = new Date()): string {
+  const parts: string[] = []
+  if (q.available_start_date) {
+    const start = new Date(q.available_start_date)
+    parts.push(sameDay(start, now) ? 'Dès aujourd’hui' : `Dès le ${dayMonth(start)}`)
+  }
+  const until = quoteValidUntil(q)
+  if (until) parts.push(`valable jusqu’au ${dayMonth(until)}`)
+  return parts.join(' · ')
+}
+
+const AMOUNT = new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'EUR', maximumFractionDigits: 0 })
+const AMOUNT_CENTS = new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'EUR', minimumFractionDigits: 2 })
+
+/** Big price of a compare card: "180 €", "180,50 €" (TTC written next to it). */
+export function quoteAmount(q: Quote): string {
+  const p = priceOf(q)
+  return (Number.isInteger(p) ? AMOUNT : AMOUNT_CENTS).format(p)
 }

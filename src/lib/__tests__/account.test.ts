@@ -1,22 +1,12 @@
 import { loginRefusal } from '../auth'
-import { chatPartnerName, initials, quotePrice, sentLabel, shortTime, sortQuotes } from '../requests'
-import type { Chat, MyRequest, Quote } from '../types'
+import { chatPartnerName, initials, quotePrice, sentLabel, shortTime } from '../requests'
+import type { Chat, Quote } from '../types'
 
-const request = (over: Partial<MyRequest>): MyRequest => ({ _id: 'r', reference_no: 'R', status: 'ACTIVE', createdAt: '2026-10-20T10:00:00Z', ...over })
 const quote = (over: Partial<Quote>): Quote => ({ _id: 'q', vendor_id: 'v', service_request_id: 'r', quote_price: 468, status: 'SENT', createdAt: '2026-10-21T10:00:00Z', ...over })
 
 describe('quotes', () => {
   it('shows the TTC price entered by the provider', () => {
     expect(quotePrice(quote({ quote_price: 468 })).replace(/\s/g, ' ')).toBe('468,00 € TTC')
-  })
-  it('puts the accepted quote first, refused ones last, newest first otherwise', () => {
-    const list = sortQuotes([
-      quote({ _id: 'old', createdAt: '2026-10-20T10:00:00Z' }),
-      quote({ _id: 'refused', status: 'IGNORED', createdAt: '2026-10-23T10:00:00Z' }),
-      quote({ _id: 'new', createdAt: '2026-10-22T10:00:00Z' }),
-      quote({ _id: 'accepted', status: 'ACCEPTED', createdAt: '2026-10-19T10:00:00Z' }),
-    ])
-    expect(list.map((q) => q._id)).toEqual(['accepted', 'new', 'old', 'refused'])
   })
 })
 
