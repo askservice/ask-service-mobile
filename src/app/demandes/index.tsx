@@ -2,10 +2,11 @@ import { useState } from 'react'
 import { ActivityIndicator, FlatList, Pressable, RefreshControl, View } from 'react-native'
 
 import { useMyRequests } from '@/api/me'
+import { CompareBanner } from '@/components/CompareBanner'
 import { RequestCard } from '@/components/RequestCard'
 import { SignInPrompt, TabScreen } from '@/components/TabScreen'
 import { Button, ErrorText, Text } from '@/components/ui'
-import { isOngoing } from '@/lib/requests'
+import { isOngoing, requestToCompare } from '@/lib/requests'
 import { useSession } from '@/state/session'
 import { colors, radius } from '@/theme'
 
@@ -29,6 +30,7 @@ function RequestList() {
   const ongoing = all.filter(isOngoing)
   const done = all.filter((r) => !isOngoing(r))
   const shown = tab === 'ongoing' ? ongoing : done
+  const toCompare = requestToCompare(ongoing)
 
   return (
     <FlatList
@@ -40,7 +42,7 @@ function RequestList() {
         <View style={{ gap: 16, marginBottom: 8 }}>
           <Text weight="bold" accessibilityRole="header" style={{ fontSize: 28 }}>Mes demandes</Text>
           <View style={{ flexDirection: 'row', gap: 6, padding: 4, borderRadius: radius.md, backgroundColor: '#EEF1F6' }}>
-            {([['ongoing', `En cours (${ongoing.length})`], ['done', 'Terminées']] as const).map(([key, label]) => (
+            {([['ongoing', `En cours (${ongoing.length})`], ['done', `Terminées (${done.length})`]] as const).map(([key, label]) => (
               <Pressable
                 key={key}
                 accessibilityRole="tab"
@@ -52,6 +54,7 @@ function RequestList() {
               </Pressable>
             ))}
           </View>
+          {tab === 'ongoing' && toCompare ? <CompareBanner request={toCompare} /> : null}
           {isLoading ? <ActivityIndicator color={colors.primary} style={{ paddingVertical: 24 }} /> : null}
           {error ? (
             <View style={{ gap: 10 }}>

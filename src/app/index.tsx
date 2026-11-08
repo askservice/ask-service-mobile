@@ -6,6 +6,7 @@ import { ActivityIndicator, Image, Keyboard, Pressable, ScrollView, TextInput, V
 import { useServiceGroups } from '@/api/requests'
 import { useMyRequests, useProfile } from '@/api/me'
 import { AuthMenu } from '@/components/AuthMenu'
+import { CompareBanner } from '@/components/CompareBanner'
 import { HowItWorks } from '@/components/HowItWorks'
 import { RequestCard } from '@/components/RequestCard'
 import { ServiceIconBadge } from '@/components/ServiceIcon'
@@ -14,7 +15,7 @@ import { TabScreen } from '@/components/TabScreen'
 import { Button, ErrorText, fieldBorder, Text } from '@/components/ui'
 import { useRevealField } from '@/lib/keyboard'
 import { popularServices, TRUST_POINTS } from '@/lib/requestCopy'
-import { isOngoing } from '@/lib/requests'
+import { isOngoing, requestToCompare } from '@/lib/requests'
 import { matchesServiceSearch } from '@/lib/search'
 import type { Service } from '@/lib/types'
 import { useDraft } from '@/state/draft'
@@ -24,13 +25,20 @@ import { colors, fonts, radius } from '@/theme'
 // Home: "De quoi avez-vous besoin ?" and the popular services as tiles, like the website;
 // « Autre service : rechercher » opens the search field and the list of services (grouped by
 // category; typing filters it).
-// Signed out: reassurance line, how it works and reviews; signed in: the ongoing request.
+// Signed out: reassurance line, how it works and reviews; signed in: the ongoing requests first
+// (banner when quotes wait, cards with the 4-step tracker), then the tiles.
+/** Ongoing requests shown on the home screen; the others are in « Demandes ». */
+const MAX_HOME_REQUESTS = 3
+
 export default function Home() {
   const { reset, update } = useDraft()
   const { token } = useSession()
   const profile = useProfile()
   const requests = useMyRequests()
-  const ongoing = (requests.data?.data ?? []).find(isOngoing)
+  const ongoing = (requests.data?.data ?? []).filter(isOngoing)
+  const toCompare = requestToCompare(ongoing)
+  // Signed in with ongoing requests: they come first, then « Une autre demande ? » and the tiles.
+  const showRequests = Boolean(token) && ongoing.length > 0
   const { data: groups, isLoading, error, refetch } = useServiceGroups()
   const [search, setSearch] = useState('')
   const [open, setOpen] = useState(false)
@@ -135,14 +143,23 @@ export default function Home() {
           ) : null}
         </View>
 
-        {!open ? (
-          <ServiceTiles services={popularServices(groups)} onPick={start} onSearch={openList} />
+        {!open && showRequests ? (
+          <View style={{ gap: 10 }}>
+            <Text weight="bold" accessibilityRole="header" style={{ fontSize: 16 }}>{ongoing.length > 1 ? 'Vos demandes en cours' : 'Votre demande en cours'}</Text>
+            {toCompare ? <CompareBanner request={toCompare} /> : null}
+            {ongoing.slice(0, MAX_HOME_REQUESTS).map((r) => <RequestCard key={r._id} request={r} />)}
+            {ongoing.length > MAX_HOME_REQUESTS ? (
+              <Pressable accessibilityRole="link" onPress={() => router.push('/demandes')} style={{ alignSelf: 'center', padding: 12 }}>
+                <Text weight="bold" style={{ color: colors.primary }}>{`Voir mes ${ongoing.length} demandes en cours`}</Text>
+              </Pressable>
+            ) : null}
+          </View>
         ) : null}
 
-        {!open && token && ongoing ? (
+        {!open ? (
           <View style={{ gap: 10 }}>
-            <Text weight="bold" style={{ fontSize: 16 }}>Votre demande en cours</Text>
-            <RequestCard request={ongoing} />
+            {showRequests ? <Text weight="bold" accessibilityRole="header" style={{ fontSize: 16 }}>Une autre demande ?</Text> : null}
+            <ServiceTiles services={popularServices(groups)} onPick={start} onSearch={openList} />
           </View>
         ) : null}
 

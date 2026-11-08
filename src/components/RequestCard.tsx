@@ -2,11 +2,12 @@ import MaterialIcons from '@expo/vector-icons/MaterialIcons'
 import { router } from 'expo-router'
 import { Pressable, View } from 'react-native'
 
-import { requestBadge, requestService, requestTitle, sentLabel, type Badge } from '@/lib/requests'
+import { requestBadge, requestProgress, requestService, requestTitle, sentLabel, type Badge } from '@/lib/requests'
 import type { MyRequest } from '@/lib/types'
 import { colors, radius } from '@/theme'
 
 import { ServiceIconBadge } from './ServiceIcon'
+import { TrackerBars } from './Tracker'
 import { Text } from './ui'
 
 const TONES: Record<Badge['tone'], { color: string; background: string }> = {
@@ -25,9 +26,11 @@ export function StatusBadge({ badge }: { badge: Badge }) {
   )
 }
 
-/** A request of the client, in the list or on the home screen. */
+/** A request of the client, in the list or on the home screen: where it stands (4-step tracker). */
 export function RequestCard({ request }: { request: MyRequest }) {
   const place = [request.city, request.pincode].filter(Boolean).join(' ')
+  const progress = requestProgress(request)
+  const badge = requestBadge(request)
   return (
     <Pressable
       accessibilityRole="button"
@@ -42,7 +45,11 @@ export function RequestCard({ request }: { request: MyRequest }) {
         </View>
         <MaterialIcons name="chevron-right" size={22} color={colors.textMuted} />
       </View>
-      <StatusBadge badge={requestBadge(request)} />
+      {progress.finished ? null : <TrackerBars step={progress.step} label={progress.label} />}
+      <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
+        <Text style={{ flex: 1, fontSize: 13, color: colors.textSecondary }}>{badge.line}</Text>
+        <StatusBadge badge={badge} />
+      </View>
     </Pressable>
   )
 }
