@@ -51,7 +51,8 @@
     "web": "expo start --web",
     "lint": "expo lint",
     "test": "jest",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "update:prod": "EXPO_PUBLIC_API_URL=https://api.askservice.fr eas update --channel production --environment production"
   },
   "private": true,
   "jest": {
