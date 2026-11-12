@@ -2,6 +2,7 @@
 // is reduced by R8 on Android and receives the remote updates of its own version only.
 import app from '../../../app.json'
 import eas from '../../../eas.json'
+import pkg from '../../../package.json'
 
 describe('EAS build profiles', () => {
   it('points the production build to the production API, whatever the local .env', () => {
@@ -11,6 +12,17 @@ describe('EAS build profiles', () => {
   it('points the development and preview builds to the dev API', () => {
     expect(eas.build.development.env.EXPO_PUBLIC_API_URL).toBe('https://api-dev.askservice.fr')
     expect(eas.build.preview.env.EXPO_PUBLIC_API_URL).toBe('https://api-dev.askservice.fr')
+  })
+})
+
+describe('remote update script', () => {
+  // eas.json env is only used by builds: an update takes the local .env (api-dev on the dev machine),
+  // so the production API is forced in the command itself.
+  it('publishes production updates against the production API', () => {
+    const cmd = pkg.scripts['update:prod']
+    expect(cmd).toMatch(/^EXPO_PUBLIC_API_URL=https:\/\/api\.askservice\.fr eas update /)
+    expect(cmd).toContain('--channel production')
+    expect(cmd).toContain('--environment production')
   })
 })
 

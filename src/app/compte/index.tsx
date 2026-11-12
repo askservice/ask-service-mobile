@@ -1,5 +1,7 @@
 import MaterialIcons from '@expo/vector-icons/MaterialIcons'
+import Constants from 'expo-constants'
 import { router } from 'expo-router'
+import * as Updates from 'expo-updates'
 import * as Linking from 'expo-linking'
 import { useState } from 'react'
 import { ActivityIndicator, Alert, Pressable, ScrollView, Switch, View } from 'react-native'
@@ -8,6 +10,7 @@ import { resendPhoneCode } from '@/api/requests'
 import { deleteAccount, saveNotificationPrefs, useMeAction, useNotificationPrefs, useProfile } from '@/api/me'
 import { SignInPrompt, TabScreen } from '@/components/TabScreen'
 import { Button, ErrorText, Field, Text } from '@/components/ui'
+import { versionLabel } from '@/lib/appVersion'
 import { displayPhone } from '@/lib/profile'
 import { initials } from '@/lib/requests'
 import type { NotificationPrefs } from '@/lib/types'
@@ -190,6 +193,9 @@ function AccountDetails() {
           <Text weight="semibold" style={{ color: colors.danger }}>Supprimer mon compte</Text>
         </Pressable>
       )}
+      <Text style={{ alignSelf: 'center', fontSize: 12, color: colors.textMuted }}>
+        {versionLabel(Constants.expoConfig?.version, Updates)}
+      </Text>
     </ScrollView>
   )
 }
