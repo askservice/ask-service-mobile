@@ -2,7 +2,7 @@
   "expo": {
     "name": "Ask Service",
     "slug": "ask-service-mobile",
-    "version": "1.1.0",
+    "version": "1.1.1",
     "runtimeVersion": {
       "policy": "appVersion"
     },
@@ -35,6 +35,7 @@
     "plugins": [
       "expo-router",
       "expo-secure-store",
+      "expo-status-bar",
       [
         "expo-splash-screen",
         {
