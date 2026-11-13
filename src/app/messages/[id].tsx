@@ -7,9 +7,10 @@ import { SafeAreaView } from 'react-native-safe-area-context'
 
 import { sendMessage, useChats, useMessages, useProfile } from '@/api/me'
 import { Avatar } from '@/components/Avatar'
+import { ChatSafetySheet } from '@/components/ChatSafetySheet'
 import { AttachmentRow, AttachmentImage } from '@/components/Attachment'
 import { ErrorText, IconButton, Text } from '@/components/ui'
-import { attachment, chatRequestLabel, withMessage } from '@/lib/chat'
+import { attachment, blockedNotice, chatBlock, chatRequestLabel, withMessage } from '@/lib/chat'
 import { chatPartner, shortTime } from '@/lib/requests'
 import type { Chat, Message } from '@/lib/types'
 import { KEYBOARD_BEHAVIOR } from '@/lib/keyboard'
@@ -32,6 +33,9 @@ export default function Conversation() {
   const [draft, setDraft] = useState('')
   const [sendError, setSendError] = useState<string | null>(null)
   const [sending, setSending] = useState(false)
+  const [safetyOpen, setSafetyOpen] = useState(false)
+  const block = chatBlock(chat)
+  const notice = blockedNotice(block, name)
 
   // Newest first in the cache (the API order), the list is drawn upside down. Messages of the
   // other side arrive through LiveProvider.
@@ -79,6 +83,7 @@ export default function Conversation() {
           <Text weight="bold" numberOfLines={1} style={{ fontSize: 16 }}>{name}</Text>
           {isOnline ? <Text style={{ fontSize: 12, color: colors.successDark }}>En ligne</Text> : null}
         </View>
+        {partnerId ? <IconButton icon="more-vert" label="Signaler ou bloquer" onPress={() => setSafetyOpen(true)} /> : null}
       </View>
       {request ? (
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, paddingHorizontal: 16, paddingVertical: 8, backgroundColor: colors.primaryDim }}>
@@ -104,27 +109,47 @@ export default function Conversation() {
         ) : <View style={{ flex: 1 }} />}
 
         {sendError ? <View style={{ paddingHorizontal: 16 }}><ErrorText>{sendError}</ErrorText></View> : null}
-        <View style={{ flexDirection: 'row', alignItems: 'flex-end', gap: 8, paddingHorizontal: 12, paddingVertical: 10, backgroundColor: colors.card, borderTopWidth: 1, borderTopColor: colors.borderSubtle }}>
-          <TextInput
-            value={draft}
-            onChangeText={setDraft}
-            placeholder="Écrire un message"
-            placeholderTextColor={colors.textMuted}
-            accessibilityLabel="Message"
-            multiline
-            style={{ flex: 1, minHeight: 44, maxHeight: 120, borderRadius: 22, borderWidth: 1, borderColor: colors.border, paddingHorizontal: 16, paddingTop: 11, paddingBottom: 11, fontFamily: fonts.regular, fontSize: 15, color: colors.text }}
-          />
-          <Pressable
-            accessibilityRole="button"
-            accessibilityLabel="Envoyer"
-            onPress={send}
-            disabled={!draft.trim() || sending}
-            style={{ width: 44, height: 44, borderRadius: 22, backgroundColor: colors.primary, alignItems: 'center', justifyContent: 'center', opacity: !draft.trim() || sending ? 0.5 : 1 }}
-          >
-            <MaterialIcons name="send" size={20} color={colors.white} />
-          </Pressable>
-        </View>
+        {notice ? (
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, paddingHorizontal: 16, paddingVertical: 14, backgroundColor: colors.card, borderTopWidth: 1, borderTopColor: colors.borderSubtle }}>
+            <MaterialIcons name="block" size={20} color={colors.textMuted} />
+            <Text style={{ flex: 1, fontSize: 14, color: colors.textSecondary, lineHeight: 20 }}>{notice}</Text>
+            {block === 'byMe' ? (
+              <Pressable accessibilityRole="button" onPress={() => setSafetyOpen(true)} hitSlop={8}>
+                <Text weight="bold" style={{ color: colors.primary }}>Débloquer</Text>
+              </Pressable>
+            ) : null}
+          </View>
+        ) : (
+          <View style={{ flexDirection: 'row', alignItems: 'flex-end', gap: 8, paddingHorizontal: 12, paddingVertical: 10, backgroundColor: colors.card, borderTopWidth: 1, borderTopColor: colors.borderSubtle }}>
+            <TextInput
+              value={draft}
+              onChangeText={setDraft}
+              placeholder="Écrire un message"
+              placeholderTextColor={colors.textMuted}
+              accessibilityLabel="Message"
+              multiline
+              style={{ flex: 1, minHeight: 44, maxHeight: 120, borderRadius: 22, borderWidth: 1, borderColor: colors.border, paddingHorizontal: 16, paddingTop: 11, paddingBottom: 11, fontFamily: fonts.regular, fontSize: 15, color: colors.text }}
+            />
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel="Envoyer"
+              onPress={send}
+              disabled={!draft.trim() || sending}
+              style={{ width: 44, height: 44, borderRadius: 22, backgroundColor: colors.primary, alignItems: 'center', justifyContent: 'center', opacity: !draft.trim() || sending ? 0.5 : 1 }}
+            >
+              <MaterialIcons name="send" size={20} color={colors.white} />
+            </Pressable>
+          </View>
+        )}
       </KeyboardAvoidingView>
+      <ChatSafetySheet
+        open={safetyOpen}
+        onClose={() => setSafetyOpen(false)}
+        chatId={id}
+        partnerId={partnerId}
+        name={name}
+        blockedByMe={block === 'byMe'}
+      />
     </SafeAreaView>
   )
 }
