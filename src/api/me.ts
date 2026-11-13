@@ -68,6 +68,16 @@ export const openChat = (token: string | null, { vendorId, quoteId }: { vendorId
 export const sendMessage = (token: string | null, { chatId, content }: { chatId: string; content: string }) =>
   apiSend<Message>('/user/send-msg', 'POST', token, { chatId, content, media: '' })
 
+/** Report the provider of a conversation to Ask Service (the admin is emailed). */
+export const reportUser = (
+  token: string | null,
+  { userId, chatId, reason, description }: { userId: string; chatId: string; reason: string; description: string },
+) => apiSend('/user/report-vendor', 'POST', token, { reported_user: userId, chat_id: chatId, reason, description: description || undefined })
+
+/** Block or unblock the provider of a conversation: no more messages either way while blocked. */
+export const setUserBlocked = (token: string | null, { userId, blocked }: { userId: string; blocked: boolean }) =>
+  apiSend(blocked ? '/user/block-user' : '/user/unblock-user', 'POST', token, { userId })
+
 export const saveNotificationPrefs = (token: string | null, prefs: NotificationPrefs) =>
   apiSend('/user/notification', 'PUT', token, prefs)
 

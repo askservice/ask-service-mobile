@@ -1,4 +1,4 @@
-import { attachment, chatRequestLabel, messageChatId, withMessage } from '../chat'
+import { attachment, blockedNotice, chatBlock, chatRequestLabel, messageChatId, REPORT_REASONS, withMessage } from '../chat'
 import type { Chat, Message } from '../types'
 
 const chat = (over: Partial<Chat>): Chat => ({ _id: 'c', updatedAt: '2026-10-27T10:00:00Z', ...over })
@@ -54,5 +54,23 @@ describe('attachments', () => {
     expect(attachment({ media_url: null })).toBeNull()
     expect(attachment({ media_url: 'chat/1-a.jpg' })).toBeNull()
     expect(attachment({ media_url: 'https://storage.askservice.fr/public/chat/1-a.jpg' })).toBeNull()
+  })
+})
+
+describe('report and block (Apple guideline 1.2)', () => {
+  it('reads who blocked whom; the client\'s own block wins', () => {
+    expect(chatBlock(chat({}))).toBe('none')
+    expect(chatBlock(undefined)).toBe('none')
+    expect(chatBlock(chat({ blockedByMe: true }))).toBe('byMe')
+    expect(chatBlock(chat({ blockedMe: true }))).toBe('byOther')
+    expect(chatBlock(chat({ blockedByMe: true, blockedMe: true }))).toBe('byMe')
+  })
+  it('replaces the message field by a notice when blocked', () => {
+    expect(blockedNotice('none', 'Clairnet')).toBeNull()
+    expect(blockedNotice('byMe', 'Clairnet')).toContain('Vous avez bloqué Clairnet')
+    expect(blockedNotice('byOther', 'Clairnet')).toBe('Vous ne pouvez plus écrire dans cette conversation.')
+  })
+  it('uses the reason keys the admin reads (website report form)', () => {
+    expect(REPORT_REASONS.map((r) => r.key)).toEqual(['harassment', 'inappropriate', 'fraud', 'spam', 'fake', 'other'])
   })
 })

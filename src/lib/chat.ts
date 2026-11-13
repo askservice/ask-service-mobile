@@ -27,3 +27,29 @@ export function attachment(m: Pick<Message, 'media_url' | 'media_kind'>): Attach
   const kind = m.media_kind ?? 'file'
   return { path: m.media_url, kind, label: kind === 'image' ? 'Photo' : kind === 'pdf' ? 'Document PDF' : 'Pièce jointe' }
 }
+
+/** Reasons of a report (same keys as the website's report form, read by the admin). */
+export const REPORT_REASONS = [
+  { key: 'harassment', label: 'Harcèlement ou propos insultants' },
+  { key: 'inappropriate', label: 'Contenu inapproprié' },
+  { key: 'fraud', label: 'Fraude ou arnaque' },
+  { key: 'spam', label: 'Spam ou démarchage' },
+  { key: 'fake', label: 'Faux professionnel' },
+  { key: 'other', label: 'Autre' },
+] as const
+
+export type ChatBlock = 'none' | 'byMe' | 'byOther'
+
+/** Who blocked whom in the conversation; the client's own block wins (they can lift it). */
+export function chatBlock(chat: Pick<Chat, 'blockedByMe' | 'blockedMe'> | undefined): ChatBlock {
+  if (chat?.blockedByMe) return 'byMe'
+  if (chat?.blockedMe) return 'byOther'
+  return 'none'
+}
+
+/** Text shown instead of the message field in a blocked conversation. */
+export function blockedNotice(block: ChatBlock, name: string): string | null {
+  if (block === 'byMe') return `Vous avez bloqué ${name}. Vous ne recevrez plus ses messages.`
+  if (block === 'byOther') return 'Vous ne pouvez plus écrire dans cette conversation.'
+  return null
+}
