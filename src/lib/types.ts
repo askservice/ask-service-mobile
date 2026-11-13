@@ -138,6 +138,9 @@ export type Chat = {
   quote_id?: { _id: string; quote_price?: number; service_request_id?: ChatRequest | string | null } | null
   // Request the conversation is about, set even before any quote.
   service_request_id?: ChatRequest | null
+  // Block between the client and the provider (either way: no more messages).
+  blockedByMe?: boolean
+  blockedMe?: boolean
 }
 
 export type ChatRequest = {
