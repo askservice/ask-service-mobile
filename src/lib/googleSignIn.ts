@@ -2,7 +2,7 @@ import Constants, { ExecutionEnvironment } from 'expo-constants'
 import { Platform } from 'react-native'
 
 import { api } from '@/api/client'
-import { FIREBASE_API_KEY, GOOGLE_WEB_CLIENT_ID } from '@/config'
+import { FIREBASE_API_KEY, GOOGLE_IOS_CLIENT_ID, GOOGLE_WEB_CLIENT_ID } from '@/config'
 
 // Google sign-in needs the native module: not in Expo Go (only in a development or store
 // build), and only once the Google client id is set.
@@ -40,7 +40,7 @@ export async function firebaseTokenFromGoogle(googleIdToken: string): Promise<st
 export async function signInWithGoogle() {
   // Loaded here: importing the module in Expo Go fails (no native code).
   const { GoogleSignin, isCancelledResponse, isErrorWithCode, statusCodes } = await import('@react-native-google-signin/google-signin')
-  GoogleSignin.configure({ webClientId: GOOGLE_WEB_CLIENT_ID })
+  GoogleSignin.configure({ webClientId: GOOGLE_WEB_CLIENT_ID, iosClientId: GOOGLE_IOS_CLIENT_ID })
   let googleIdToken: string | null
   try {
     await GoogleSignin.hasPlayServices({ showPlayServicesUpdateDialog: true })

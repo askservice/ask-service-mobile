@@ -17,7 +17,10 @@
       "icon": "./assets/images/icon.png",
       "bundleIdentifier": "fr.askservice.app",
       "supportsTablet": false,
-      "usesAppleSignIn": true
+      "usesAppleSignIn": true,
+      "config": {
+        "usesNonExemptEncryption": false
+      }
     },
     "android": {
       "adaptiveIcon": {

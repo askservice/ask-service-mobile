@@ -11,3 +11,7 @@ export const GEOCODING_URL = 'https://data.geopf.fr/geocodage'
 export const FIREBASE_API_KEY = process.env.EXPO_PUBLIC_FIREBASE_API_KEY || 'AIzaSyBm-6Ffv6IK8HcuPpGM370LVbZc1kTQ058'
 export const GOOGLE_WEB_CLIENT_ID =
   process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID || '112726239018-0ke139dgrf05nb7bpima44msk7lcrrth.apps.googleusercontent.com'
+// OAuth client of type "iOS" of the same project (GoogleService-Info.plist, CLIENT_ID): the iOS
+// app signs in to Google with it. Its reversed form is the URL scheme Google returns to, added to
+// the iOS build by the google-signin config plugin from the plist (app.config.js).
+export const GOOGLE_IOS_CLIENT_ID = '112726239018-62kgfcdavr4vg0qqr9ntv2p2rh21c0vd.apps.googleusercontent.com'
