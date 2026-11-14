@@ -67,6 +67,7 @@
           "microphonePermission": false
         }
       ],
+      "./plugins/withOptionalCamera",
       "@react-native-google-signin/google-signin",
       "expo-apple-authentication",
       [
