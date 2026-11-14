@@ -4,11 +4,12 @@ import { useEffect } from 'react'
 
 import { API_URL } from '@/config'
 
+import { messageParts, sendFailureMessage, type PickedFile } from '@/lib/attachments'
 import type { ProfileUpdate } from '@/lib/profile'
 import type { Chat, Message, MyRequest, NotificationPrefs, Profile } from '@/lib/types'
 import { useSession } from '@/state/session'
 
-import { ApiError, apiGet, apiSend } from './client'
+import { ApiError, apiGet, apiSend, type ApiBody } from './client'
 
 // Data of the signed-in client. Every key starts with "me" (cleared at sign-out); an expired
 // session (401) signs the client out.
@@ -67,6 +68,31 @@ export const openChat = (token: string | null, { vendorId, quoteId }: { vendorId
 
 export const sendMessage = (token: string | null, { chatId, content }: { chatId: string; content: string }) =>
   apiSend<Message>('/user/send-msg', 'POST', token, { chatId, content, media: '' })
+
+/** Message with a photo or a document (multipart form, the file in "media" as on the website). */
+export async function sendAttachment(token: string | null, input: { chatId: string; content: string; file: PickedFile }) {
+  const form = new FormData()
+  // React Native reads a file part from { uri, name, type }.
+  for (const [key, value] of messageParts(input)) form.append(key, value as unknown as Blob)
+  let res: Response
+  try {
+    res = await fetch(`${API_URL}/api/user/send-msg`, {
+      method: 'POST',
+      headers: { Accept: 'application/json', 'Accept-Language': 'fr', Authorization: `Bearer ${token ?? ''}` },
+      body: form,
+    })
+  } catch {
+    throw new ApiError(sendFailureMessage(0, ''), 0)
+  }
+  let body: ApiBody<Message> = {}
+  try {
+    body = (await res.json()) as ApiBody<Message>
+  } catch {
+    // Not JSON (proxy error page): only the status is meaningful.
+  }
+  if (res.status >= 400) throw new ApiError(sendFailureMessage(res.status, body.message ?? ''), res.status)
+  return body.data
+}
 
 /** Report the provider of a conversation to Ask Service (the admin is emailed). */
 export const reportUser = (
