@@ -31,6 +31,12 @@ describe('app config', () => {
     expect(app.expo.runtimeVersion).toEqual({ policy: 'appVersion' })
     expect(app.expo.updates.url).toBe(`https://u.expo.dev/${app.expo.extra.eas.projectId}`)
   })
+  it('asks for the camera and photos in French, never for the microphone (photos joined to messages)', () => {
+    const plugin = app.expo.plugins.find((p) => Array.isArray(p) && p[0] === 'expo-image-picker') as [string, Record<string, string | false>]
+    expect(plugin[1].cameraPermission).toMatch(/^Ask Service utilise l'appareil photo/)
+    expect(plugin[1].photosPermission).toMatch(/^Ask Service accède à vos photos/)
+    expect(plugin[1].microphonePermission).toBe(false)
+  })
   it('turns R8 on for Android release builds', () => {
     const plugin = app.expo.plugins.find((p) => Array.isArray(p) && p[0] === 'expo-build-properties') as [string, { android: Record<string, boolean> }]
     expect(plugin[1].android).toEqual({ enableMinifyInReleaseBuilds: true, enableShrinkResourcesInReleaseBuilds: true })

@@ -2,7 +2,7 @@
   "expo": {
     "name": "Ask Service",
     "slug": "ask-service-mobile",
-    "version": "1.1.1",
+    "version": "1.2.0",
     "runtimeVersion": {
       "policy": "appVersion"
     },
@@ -57,6 +57,14 @@
         "expo-location",
         {
           "locationWhenInUsePermission": "Ask Service utilise votre position pour remplir l'adresse de l'intervention."
+        }
+      ],
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "Ask Service accède à vos photos uniquement pour joindre celle que vous choisissez à un message.",
+          "cameraPermission": "Ask Service utilise l'appareil photo pour joindre une photo à un message envoyé à un professionnel.",
+          "microphonePermission": false
         }
       ],
       "@react-native-google-signin/google-signin",
