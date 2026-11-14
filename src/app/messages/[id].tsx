@@ -2,18 +2,21 @@ import MaterialIcons from '@expo/vector-icons/MaterialIcons'
 import { useQueryClient } from '@tanstack/react-query'
 import { router, useLocalSearchParams } from 'expo-router'
 import { useCallback, useEffect, useState } from 'react'
-import { ActivityIndicator, FlatList, KeyboardAvoidingView, Pressable, TextInput, View } from 'react-native'
+import { ActivityIndicator, Alert, FlatList, KeyboardAvoidingView, Linking, Platform, Pressable, TextInput, View } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 
-import { sendMessage, useChats, useMessages, useProfile } from '@/api/me'
+import { sendAttachment, sendMessage, useChats, useMessages, useProfile } from '@/api/me'
+import { AttachmentPreview, AttachmentSheet, type AttachmentSource } from '@/components/AttachmentSheet'
 import { Avatar } from '@/components/Avatar'
 import { ChatSafetySheet } from '@/components/ChatSafetySheet'
 import { AttachmentRow, AttachmentImage } from '@/components/Attachment'
 import { ErrorText, IconButton, Text } from '@/components/ui'
+import { attachmentProblem, type PickedFile } from '@/lib/attachments'
 import { attachment, blockedNotice, chatBlock, chatRequestLabel, withMessage } from '@/lib/chat'
 import { chatPartner, shortTime } from '@/lib/requests'
 import type { Chat, Message } from '@/lib/types'
 import { KEYBOARD_BEHAVIOR } from '@/lib/keyboard'
+import { chooseDocument, choosePhoto, PickerPermissionError, takePhoto } from '@/lib/pickAttachment'
 import { useLive } from '@/state/live'
 import { useSession } from '@/state/session'
 import { colors, fonts, radius } from '@/theme'
@@ -34,6 +37,8 @@ export default function Conversation() {
   const [sendError, setSendError] = useState<string | null>(null)
   const [sending, setSending] = useState(false)
   const [safetyOpen, setSafetyOpen] = useState(false)
+  const [attachOpen, setAttachOpen] = useState(false)
+  const [file, setFile] = useState<PickedFile | null>(null)
   const block = chatBlock(chat)
   const notice = blockedNotice(block, name)
 
@@ -54,14 +59,20 @@ export default function Conversation() {
   }, [dataUpdatedAt, queryClient, id])
   const myId = profile.data?._id
 
+  const canSend = Boolean(draft.trim() || file) && !sending
+
   const send = async () => {
     const content = draft.trim()
-    if (!content || sending) return
+    if ((!content && !file) || sending) return
+    const joined = file
     setSending(true)
     setSendError(null)
     setDraft('')
     try {
-      const message = await sendMessage(token, { chatId: id, content })
+      const message = joined
+        ? await sendAttachment(token, { chatId: id, content, file: joined })
+        : await sendMessage(token, { chatId: id, content })
+      if (joined) setFile(null)
       if (message?._id) {
         add(message)
         announce(message)
@@ -72,6 +83,29 @@ export default function Conversation() {
     } finally {
       setSending(false)
     }
+  }
+
+  // The picker opens once the sheet has slid down (iOS cannot show both at once).
+  const pick = (source: AttachmentSource) => {
+    setAttachOpen(false)
+    setTimeout(async () => {
+      try {
+        const picked = source === 'camera' ? await takePhoto() : source === 'library' ? await choosePhoto() : await chooseDocument()
+        if (!picked) return
+        const problem = attachmentProblem(picked)
+        setSendError(problem)
+        if (!problem) setFile(picked)
+      } catch (e) {
+        if (e instanceof PickerPermissionError) {
+          Alert.alert('Appareil photo', e.message, [
+            { text: 'Annuler', style: 'cancel' },
+            { text: 'Ouvrir les réglages', onPress: () => Linking.openSettings() },
+          ])
+        } else {
+          setSendError('Le fichier n’a pas pu être ajouté. Réessayez.')
+        }
+      }
+    }, Platform.OS === 'ios' ? 450 : 50)
   }
 
   return (
@@ -120,28 +154,42 @@ export default function Conversation() {
             ) : null}
           </View>
         ) : (
-          <View style={{ flexDirection: 'row', alignItems: 'flex-end', gap: 8, paddingHorizontal: 12, paddingVertical: 10, backgroundColor: colors.card, borderTopWidth: 1, borderTopColor: colors.borderSubtle }}>
-            <TextInput
-              value={draft}
-              onChangeText={setDraft}
-              placeholder="Écrire un message"
-              placeholderTextColor={colors.textMuted}
-              accessibilityLabel="Message"
-              multiline
-              style={{ flex: 1, minHeight: 44, maxHeight: 120, borderRadius: 22, borderWidth: 1, borderColor: colors.border, paddingHorizontal: 16, paddingTop: 11, paddingBottom: 11, fontFamily: fonts.regular, fontSize: 15, color: colors.text }}
-            />
-            <Pressable
-              accessibilityRole="button"
-              accessibilityLabel="Envoyer"
-              onPress={send}
-              disabled={!draft.trim() || sending}
-              style={{ width: 44, height: 44, borderRadius: 22, backgroundColor: colors.primary, alignItems: 'center', justifyContent: 'center', opacity: !draft.trim() || sending ? 0.5 : 1 }}
-            >
-              <MaterialIcons name="send" size={20} color={colors.white} />
-            </Pressable>
+          <View style={{ gap: 8, paddingHorizontal: 12, paddingVertical: 10, backgroundColor: colors.card, borderTopWidth: 1, borderTopColor: colors.borderSubtle }}>
+            {file ? <AttachmentPreview file={file} onRemove={() => setFile(null)} disabled={sending} /> : null}
+            <View style={{ flexDirection: 'row', alignItems: 'flex-end', gap: 8 }}>
+              <Pressable
+                accessibilityRole="button"
+                accessibilityLabel="Joindre un fichier"
+                onPress={() => setAttachOpen(true)}
+                disabled={sending}
+                hitSlop={4}
+                style={({ pressed }) => ({ width: 44, height: 44, borderRadius: 22, alignItems: 'center', justifyContent: 'center', opacity: sending ? 0.4 : pressed ? 0.6 : 1 })}
+              >
+                <MaterialIcons name="attach-file" size={24} color={colors.textSecondary} />
+              </Pressable>
+              <TextInput
+                value={draft}
+                onChangeText={setDraft}
+                placeholder={file ? 'Ajouter un message (facultatif)' : 'Écrire un message'}
+                placeholderTextColor={colors.textMuted}
+                accessibilityLabel="Message"
+                multiline
+                style={{ flex: 1, minHeight: 44, maxHeight: 120, borderRadius: 22, borderWidth: 1, borderColor: colors.border, paddingHorizontal: 16, paddingTop: 11, paddingBottom: 11, fontFamily: fonts.regular, fontSize: 15, color: colors.text }}
+              />
+              <Pressable
+                accessibilityRole="button"
+                accessibilityLabel="Envoyer"
+                onPress={send}
+                disabled={!canSend}
+                style={{ width: 44, height: 44, borderRadius: 22, backgroundColor: colors.primary, alignItems: 'center', justifyContent: 'center', opacity: canSend ? 1 : 0.5 }}
+              >
+                {sending ? <ActivityIndicator size="small" color={colors.white} /> : <MaterialIcons name="send" size={20} color={colors.white} />}
+              </Pressable>
+            </View>
           </View>
         )}
       </KeyboardAvoidingView>
+      <AttachmentSheet open={attachOpen} onClose={() => setAttachOpen(false)} onChoose={pick} />
       <ChatSafetySheet
         open={safetyOpen}
         onClose={() => setSafetyOpen(false)}
