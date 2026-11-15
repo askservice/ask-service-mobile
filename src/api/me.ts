@@ -81,8 +81,8 @@ export async function sendAttachment(token: string | null, input: { chatId: stri
       headers: { Accept: 'application/json', 'Accept-Language': 'fr', Authorization: `Bearer ${token ?? ''}` },
       body: form,
     })
-  } catch {
-    throw new ApiError(sendFailureMessage(0, ''), 0)
+  } catch (e) {
+    throw new ApiError(sendFailureMessage(0, '', e instanceof Error ? `${e.name}: ${e.message}` : String(e)), 0)
   }
   let body: ApiBody<Message> = {}
   try {

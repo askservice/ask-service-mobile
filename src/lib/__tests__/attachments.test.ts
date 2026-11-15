@@ -98,4 +98,11 @@ describe('send failures', () => {
     expect(sendFailureMessage(403, 'Cette conversation est bloquée')).toBe('Cette conversation est bloquée')
     expect(sendFailureMessage(0, '')).toBe('La pièce jointe n’a pas pu être envoyée. Vérifiez votre connexion et réessayez.')
   })
+
+  it('adds the technical detail of the failure, to find the cause from the phone', () => {
+    const generic = 'La pièce jointe n’a pas pu être envoyée. Vérifiez votre connexion et réessayez.'
+    expect(sendFailureMessage(0, '', 'TypeError: Network request failed')).toBe(`${generic} (détail : TypeError: Network request failed)`)
+    expect(sendFailureMessage(502, '')).toBe(`${generic} (détail : erreur HTTP 502)`)
+    expect(sendFailureMessage(0, '', `a\n${'x'.repeat(300)}`)).toBe(`${generic} (détail : a ${'x'.repeat(118)})`)
+  })
 })
