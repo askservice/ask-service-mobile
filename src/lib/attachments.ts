@@ -92,10 +92,19 @@ export function messageParts({ chatId, content, file }: { chatId: string; conten
   return parts
 }
 
-/** Message shown when the API refuses the file or cannot be reached. */
-export function sendFailureMessage(status: number, message: string) {
+/** Short technical detail added to the generic failure, to find the cause from the phone. */
+function failureDetail(status: number, error?: string) {
+  const text = status > 0 ? `erreur HTTP ${status}` : (error ?? '').replace(/\s+/g, ' ').trim().slice(0, 120)
+  return text ? ` (détail : ${text})` : ''
+}
+
+/**
+ * Message shown when the API refuses the file or cannot be reached. `error` is the phone's own
+ * error when the request failed before any answer (status 0).
+ */
+export function sendFailureMessage(status: number, message: string, error?: string) {
   if (status === 413) return 'Fichier trop lourd : 10 Mo maximum.'
   if (status === 400) return TYPE_REFUSED
   if (status >= 400 && message) return message
-  return 'La pièce jointe n’a pas pu être envoyée. Vérifiez votre connexion et réessayez.'
+  return `La pièce jointe n’a pas pu être envoyée. Vérifiez votre connexion et réessayez.${failureDetail(status, error)}`
 }
