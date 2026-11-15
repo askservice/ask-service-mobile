@@ -83,7 +83,7 @@ export function attachmentProblem(file: PickedFile): string | null {
   return null
 }
 
-/** Fields of the multipart form sent to send-msg (the file goes in "media", as on the website). */
+/** Fields of the multipart form sent to send-msg (the file goes in "media", as on the website; sendAttachment turns the file into an expo-file-system File). */
 export function messageParts({ chatId, content, file }: { chatId: string; content: string; file: PickedFile }) {
   const parts: [string, string | { uri: string; name: string; type: string }][] = [['chatId', chatId]]
   const text = content.trim()
