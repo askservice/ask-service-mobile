@@ -71,11 +71,15 @@ export const sendMessage = (token: string | null, { chatId, content }: { chatId:
 
 /** Message with a photo or a document (multipart form, the file in "media" as on the website). */
 export async function sendAttachment(token: string | null, input: { chatId: string; content: string; file: PickedFile }) {
-  const form = new FormData()
-  // React Native reads a file part from { uri, name, type }.
-  for (const [key, value] of messageParts(input)) form.append(key, value as unknown as Blob)
   let res: Response
   try {
+    // The fetch installed by Expo (expo/fetch) cannot read React Native's { uri, name, type } file
+    // parts ("Unsupported FormDataPart implementation"): the file goes as an expo-file-system File,
+    // whose bytes it reads itself. The API detects the real type and names the stored file.
+    const form = new FormData()
+    for (const [key, value] of messageParts(input)) {
+      form.append(key, typeof value === 'string' ? value : (new File(value.uri) as unknown as Blob))
+    }
     res = await fetch(`${API_URL}/api/user/send-msg`, {
       method: 'POST',
       headers: { Accept: 'application/json', 'Accept-Language': 'fr', Authorization: `Bearer ${token ?? ''}` },
