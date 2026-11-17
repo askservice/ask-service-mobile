@@ -11,7 +11,7 @@ export const POPULAR_SERVICES: { id: string; label: string }[] = [
   { id: '6a8985230da7e0b8cef4d64b', label: 'Jardinage' }, // Jardinage & Aménagement paysager
   { id: '6a8990fc4bc5d9a73268df6b', label: 'Plomberie' }, // Plomberie & Chauffage
   { id: '6ae73580a8547c669d33980c', label: 'Électricité' }, // Électricité
-  { id: '6a8985510da7e0b8cef4d65a', label: 'Déménagement' }, // Déménagement (replaces Nuisibles, 17/11/2026)
+  { id: '6a8991434bc5d9a73268df89', label: 'Peinture' }, // Peinture (replaces Nuisibles, 17/11/2026)
 ]
 
 export type TileService = Service & { tileLabel: string }
