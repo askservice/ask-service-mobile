@@ -3,7 +3,7 @@ import type { Service, ServiceGroup } from './types'
 // Same tiles, texts and counter as the website's request form (askservice.fr/request-a-service).
 
 /** Popular services shown as tiles, in the owner's order (admin service ids, same list as the
- *  website's src/data/servicePages.ts; the last two come from the backend catalogue of 2026-11). */
+ *  website's src/data/servicePages.ts; Électricité comes from the backend catalogue of 2026-11). */
 /** `label`: short name on the tile (the full admin titles take 2 or 3 lines in a tile). */
 export const POPULAR_SERVICES: { id: string; label: string }[] = [
   { id: '6a8984db0da7e0b8cef4d63c', label: 'Nettoyage' }, // Nettoyage & Ménage
@@ -11,7 +11,7 @@ export const POPULAR_SERVICES: { id: string; label: string }[] = [
   { id: '6a8985230da7e0b8cef4d64b', label: 'Jardinage' }, // Jardinage & Aménagement paysager
   { id: '6a8990fc4bc5d9a73268df6b', label: 'Plomberie' }, // Plomberie & Chauffage
   { id: '6ae73580a8547c669d33980c', label: 'Électricité' }, // Électricité
-  { id: '6ae73580a8547c669d33980b', label: 'Nuisibles' }, // Désinsectisation & Dératisation
+  { id: '6a8985510da7e0b8cef4d65a', label: 'Déménagement' }, // Déménagement (replaces Nuisibles, 17/11/2026)
 ]
 
 export type TileService = Service & { tileLabel: string }

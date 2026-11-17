@@ -15,9 +15,9 @@ describe('popularServices', () => {
   })
 
   it('short name on the tile, full title kept for the request', () => {
-    const nuisibles = POPULAR_SERVICES.find((p) => p.label === 'Nuisibles')!.id
-    const [tile] = popularServices([group('a', [nuisibles])])
-    expect(tile).toMatchObject({ _id: nuisibles, title: `service ${nuisibles}`, tileLabel: 'Nuisibles' })
+    const demenagement = POPULAR_SERVICES.find((p) => p.label === 'Déménagement')!.id
+    const [tile] = popularServices([group('a', [demenagement])])
+    expect(tile).toMatchObject({ _id: demenagement, title: `service ${demenagement}`, tileLabel: 'Déménagement' })
   })
 
   it('leaves out the services no longer in the catalogue', () => {
