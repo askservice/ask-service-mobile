@@ -1,7 +1,7 @@
 import MaterialIcons from '@expo/vector-icons/MaterialIcons'
 import { router, useLocalSearchParams } from 'expo-router'
 import { useState, type ComponentProps } from 'react'
-import { ActivityIndicator, Image, ScrollView, View } from 'react-native'
+import { ActivityIndicator, ScrollView, View } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 
 import { useVendorProfile } from '@/api/me'
@@ -52,11 +52,7 @@ export default function ProviderProfile() {
       <ScrollView contentContainerStyle={{ padding: 16, gap: 14 }}>
         <Card>
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 14 }}>
-            {vendor.profile_pic ? (
-              <Image source={{ uri: vendor.profile_pic }} accessibilityIgnoresInvertColors style={{ width: 64, height: 64, borderRadius: 32, backgroundColor: colors.elevated }} />
-            ) : (
-              <Avatar name={name} size={64} online={false} />
-            )}
+            <Avatar name={name} size={64} online={false} uri={vendor.profile_pic} />
             <View style={{ flex: 1, gap: 3 }}>
               <Text weight="extrabold" accessibilityRole="header" style={{ fontSize: 20 }}>{name}</Text>
               {vendor.is_verified ? (

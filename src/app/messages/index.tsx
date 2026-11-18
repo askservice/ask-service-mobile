@@ -70,7 +70,7 @@ function ChatRow({ chat }: { chat: Chat }) {
       onPress={() => router.push({ pathname: '/messages/[id]', params: { id: chat._id, name } })}
       style={({ pressed }) => ({ flexDirection: 'row', alignItems: 'center', gap: 12, padding: 14, borderRadius: radius.lg, backgroundColor: pressed ? colors.primaryDim : colors.card, borderWidth: 1, borderColor: colors.borderSubtle })}
     >
-      <Avatar name={name} size={44} online={online} />
+      <Avatar name={name} size={44} online={online} uri={chatPartner(chat)?.profile_pic} />
       <View style={{ flex: 1, gap: 3 }}>
         <View style={{ flexDirection: 'row', justifyContent: 'space-between', gap: 8 }}>
           <Text weight="bold" numberOfLines={1} style={{ flex: 1, fontSize: 16 }}>{name}</Text>
