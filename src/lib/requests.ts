@@ -77,6 +77,12 @@ export function chatPartner(chat: Chat): ChatUser | null {
   return chat.users?.find((u) => !u.itsMe) ?? chat.users?.[0] ?? null
 }
 
+/** Image of an avatar: only a full https address (the API sends the storage URL), else none. */
+export function avatarImage(uri: string | null | undefined): string | null {
+  const v = uri?.trim()
+  return v && /^https:\/\//i.test(v) ? v : null
+}
+
 export function chatPartnerName(chat: Chat): string {
   const p = chatPartner(chat)
   if (!p) return 'Prestataire'

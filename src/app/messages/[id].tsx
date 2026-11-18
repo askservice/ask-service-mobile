@@ -121,7 +121,7 @@ export default function Conversation() {
           onPress={() => partnerId && router.push({ pathname: '/prestataire/[id]', params: { id: partnerId, requestRef: chatRequestReference(chat) ?? '' } })}
           style={({ pressed }) => ({ flex: 1, flexDirection: 'row', alignItems: 'center', gap: 12, opacity: pressed ? 0.7 : 1 })}
         >
-          <Avatar name={name} size={40} online={isOnline} />
+          <Avatar name={name} size={40} online={isOnline} uri={chat ? chatPartner(chat)?.profile_pic : null} />
           <View style={{ flex: 1, gap: 1 }}>
             <Text weight="bold" numberOfLines={1} style={{ fontSize: 16 }}>{name}</Text>
             <Text style={{ fontSize: 12, color: isOnline ? colors.successDark : colors.textMuted }}>{isOnline ? 'En ligne · voir le profil' : 'Voir le profil'}</Text>
