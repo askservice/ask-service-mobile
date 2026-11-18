@@ -17,6 +17,7 @@ import { chatPartner, shortTime } from '@/lib/requests'
 import type { Chat, Message } from '@/lib/types'
 import { KEYBOARD_BEHAVIOR } from '@/lib/keyboard'
 import { chooseDocument, choosePhoto, PickerPermissionError, takePhoto } from '@/lib/pickAttachment'
+import { chatRequestReference } from '@/lib/vendorProfile'
 import { useLive } from '@/state/live'
 import { useSession } from '@/state/session'
 import { colors, fonts, radius } from '@/theme'
@@ -112,11 +113,20 @@ export default function Conversation() {
     <SafeAreaView edges={['top', 'bottom']} style={{ flex: 1, backgroundColor: colors.background }}>
       <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12, paddingHorizontal: 16, paddingVertical: 10, backgroundColor: colors.card, borderBottomWidth: 1, borderBottomColor: colors.borderSubtle }}>
         <IconButton icon="arrow-back" label="Retour" onPress={() => router.back()} />
-        <Avatar name={name} size={40} online={isOnline} />
-        <View style={{ flex: 1, gap: 1 }}>
-          <Text weight="bold" numberOfLines={1} style={{ fontSize: 16 }}>{name}</Text>
-          {isOnline ? <Text style={{ fontSize: 12, color: colors.successDark }}>En ligne</Text> : null}
-        </View>
+        {/* Name and photo open the provider's profile (reviews, « Laisser un avis »). */}
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel={`Voir le profil de ${name}`}
+          disabled={!partnerId}
+          onPress={() => partnerId && router.push({ pathname: '/prestataire/[id]', params: { id: partnerId, requestRef: chatRequestReference(chat) ?? '' } })}
+          style={({ pressed }) => ({ flex: 1, flexDirection: 'row', alignItems: 'center', gap: 12, opacity: pressed ? 0.7 : 1 })}
+        >
+          <Avatar name={name} size={40} online={isOnline} />
+          <View style={{ flex: 1, gap: 1 }}>
+            <Text weight="bold" numberOfLines={1} style={{ fontSize: 16 }}>{name}</Text>
+            <Text style={{ fontSize: 12, color: isOnline ? colors.successDark : colors.textMuted }}>{isOnline ? 'En ligne · voir le profil' : 'Voir le profil'}</Text>
+          </View>
+        </Pressable>
         {partnerId ? <IconButton icon="more-vert" label="Signaler ou bloquer" onPress={() => setSafetyOpen(true)} /> : null}
       </View>
       {request ? (
