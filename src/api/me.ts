@@ -6,6 +6,7 @@ import { API_URL } from '@/config'
 
 import { messageParts, sendFailureMessage, type PickedFile } from '@/lib/attachments'
 import type { ProfileUpdate } from '@/lib/profile'
+import type { VendorDetails } from '@/lib/vendorProfile'
 import type { Chat, Message, MyRequest, NotificationPrefs, Profile } from '@/lib/types'
 import { useSession } from '@/state/session'
 
@@ -40,6 +41,15 @@ export const useChats = () => useMe<Chat[]>(['chats'], '/user/fetch-chats', { re
 
 export const useMessages = (chatId: string) =>
   useMe<{ messages?: Message[] | null }>(['messages', chatId], `/user/all-messages/${chatId}?index=1&limit=50`)
+
+/** Public profile of a provider of the client (404 for any other provider). */
+export const useVendorProfile = (vendorId: string) =>
+  useMe<VendorDetails>(['vendor-profile', vendorId], `/user/vendor-details/${vendorId}`, { enabled: Boolean(vendorId) })
+
+export const submitReview = (
+  token: string | null,
+  { vendorId, requestId, rating, text }: { vendorId: string; requestId: string; rating: number; text: string },
+) => apiSend('/user/submit-review', 'POST', token, { vendor: vendorId, service_request_id: requestId, rating, review: text })
 
 export const useNotificationPrefs = () => useMe<NotificationPrefs>(['notification-prefs'], '/user/notification')
 
