@@ -51,3 +51,18 @@ export function questionsLeftNote(index: number, stepCount: number) {
   const left = stepCount - index
   return left > 1 ? `Encore ${left} questions, moins d'une minute` : 'Dernière question'
 }
+
+/** Contact step, the texts of the website's « Dernière étape » screen. */
+export const CONTACT_STEP = {
+  title: 'Dernière étape : où recevoir vos devis ?',
+  note: 'Gratuit et sans engagement',
+  reassurance:
+    'Vos coordonnées vont uniquement aux professionnels qui répondent à votre demande, 3 au maximum. Elles ne sont jamais revendues.',
+  button: 'Voir le récapitulatif',
+  addNotes: '+ Ajouter une précision (facultatif)',
+}
+
+/** « Précisions » stays folded behind a link, unless asked for or already filled in. */
+export function showNotesField(opened: boolean, notes?: string) {
+  return opened || !!notes?.trim()
+}
